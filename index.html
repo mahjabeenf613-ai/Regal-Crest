@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Regal Crest - Executive Suite</title>
+    
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Regal Crest","short_name":"RegalCrest","start_url":"/","display":"standalone","background_color":"#0F251E","theme_color":"#D4AF37"}'>
+    <meta name="theme-color" content="#0F251E">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #071511;
+            --card-bg: #0F251E;
+            --gold: #D4AF37;
+            --gold-light: #F4E8B1;
+            --green: #10B981;
+            --cream: #F8FAFC;
+            --text-muted: #94A3B8;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100vh;
+            background-color: var(--bg-dark); font-family: 'Segoe UI', system-ui, sans-serif;
+            overflow: hidden; display: flex; justify-content: center; align-items: center;
+        }
+
+        .app-frame {
+            width: 100%; max-width: 430px; height: 100vh;
+            background-color: var(--bg-dark); color: var(--cream);
+            display: flex; flex-direction: column; position: relative; overflow: hidden;
+        }
+
+        @media (min-width: 431px) {
+            .app-frame { height: 92vh; border-radius: 20px; border: 2px solid var(--gold); box-shadow: 0 0 30px rgba(212,175,55,0.3); }
+        }
+
+        .view-container {
+            flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 70px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .header {
+            text-align: center; padding: 10px 0; border-bottom: 2px solid var(--gold);
+            margin-bottom: 12px; background: rgba(212,175,55,0.05); border-radius: 10px;
+        }
+        .header h1 { margin: 0; color: var(--gold); font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; }
+        .header .subtitle { margin: 2px 0 0 0; font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .launch-badge {
+            display: inline-block; background-color: var(--gold); color: var(--bg-dark);
+            font-size: 9px; padding: 2px 10px; border-radius: 10px; margin-top: 4px; font-weight: 800;
+        }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 11px; color: var(--gold); margin-bottom: 4px; font-weight: 700; }
+        input, select {
+            width: 100%; padding: 12px; border: 1.5px solid var(--gold);
+            border-radius: 8px; background-color: #0A1E18; color: #FFF; font-size: 13px; outline: none;
+        }
+
+        .btn {
+            width: 100%; padding: 12px; background: linear-gradient(135deg, var(--gold), #AA7C11);
+            color: var(--bg-dark); border: none; border-radius: 8px; font-weight: 800; font-size: 13px;
+            cursor: pointer; margin-top: 6px; text-transform: uppercase; text-align: center;
+        }
+        .btn-green { background: linear-gradient(135deg, var(--green), #047857); color: #FFF; }
+        .btn-outline { background: transparent; border: 1.5px solid var(--gold); color: var(--gold); }
+
+        .switch-link { text-align: center; font-size: 12px; margin-top: 12px; color: var(--text-muted); }
+        .switch-link span { color: var(--gold); font-weight: bold; cursor: pointer; text-decoration: underline; }
+
+        .balance-box {
+            background: linear-gradient(135deg, #0A1E18, var(--card-bg)); color: #FFF;
+            padding: 16px; border-radius: 12px; text-align: center; margin-bottom: 12px; border: 1.5px solid var(--gold);
+        }
+        .balance-box h3 { margin: 0; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .balance-box h1 { margin: 6px 0 0 0; font-size: 24px; color: var(--gold); font-weight: 900; }
+
+        .dash-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .stat-card { background: var(--card-bg); border: 1px solid rgba(212,175,55,0.3); padding: 10px; border-radius: 10px; text-align: center; }
+        .stat-card h4 { margin: 0; font-size: 9px; color: var(--text-muted); text-transform: uppercase; }
+        .stat-card p { margin: 4px 0 0 0; font-size: 13px; font-weight: 800; color: var(--gold); }
+
+        .referral-card {
+            background: var(--card-bg); border: 1.5px dashed var(--gold); padding: 12px; border-radius: 10px; margin-bottom: 12px; text-align: center;
+        }
+
+        .plans-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; }
+        .plan-card { background: var(--card-bg); border: 1.5px solid var(--gold); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .plan-info h3 { margin: 0; font-size: 13px; color: var(--gold); }
+        .plan-info p { margin: 3px 0 0 0; font-size: 10px; color: var(--text-muted); }
+
+        .nav-bar {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 60px;
+            background: #071511; border-top: 1px solid rgba(212,175,55,0.3);
+            display: flex; justify-content: space-around; align-items: center; z-index: 100;
+        }
+        .nav-item { text-align: center; color: var(--text-muted); font-size: 10px; cursor: pointer; font-weight: 600; text-transform: uppercase; }
+        .nav-item.active { color: var(--gold); }
+
+        .toast {
+            position: absolute; bottom: 75px; left: 50%; transform: translateX(-50%);
+            background: var(--card-bg); color: var(--gold); padding: 10px 20px; border-radius: 20px;
+            font-size: 11px; border: 1.5px solid var(--gold); z-index: 9999; display: none; text-align: center; width: 85%; font-weight: 700;
+        }
+
+        .admin-section { background: var(--card-bg); border: 1.5px solid var(--gold); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+        .admin-section h3 { margin: 0 0 8px 0; font-size: 11px; color: var(--gold); border-bottom: 1px solid rgba(212,175,55,0.3); padding-bottom: 4px; text-transform: uppercase; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="app-frame">
+        <div id="toastBox" class="toast"></div>
+
+        <div class="view-container" id="mainViewContainer">
+
+            <!-- SIGN UP VIEW -->
+            <div id="signupView" class="hidden">
+                <div class="header" onclick="unlockAdmin()">
+                    <h1>Regal Crest</h1>
+                    <div class="subtitle">Executive Suite</div>
+                    <div class="launch-badge">Launch Date: 11 November 2026</div>
+                </div>
+
+                <div class="referral-card" style="background: rgba(212,175,55,0.05); margin-bottom: 12px;">
+                    <div style="font-size:11px; font-weight:900; color:var(--gold); margin-bottom:4px;">📲 Download Executive App (APK)</div>
+                    <button class="btn" style="margin:0; padding:8px; font-size:10px;" onclick="triggerDownload()">Download App Now</button>
+                </div>
+
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="suName" placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label>Mobile Number</label>
+                    <input type="tel" id="suMobile" placeholder="03001234567">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="suPassword" placeholder="Enter password">
+                </div>
+                <div class="form-group">
+                    <label>Referral Code (Optional)</label>
+                    <input type="text" id="suRefCode" placeholder="6-digit code">
+                </div>
+
+                <button class="btn" onclick="handleSignUp()">Create Account</button>
+                
+                <div class="switch-link">
+                    Already registered? <span onclick="showView('loginView')">Login Here</span>
+                </div>
+            </div>
+
+            <!-- LOGIN VIEW -->
+            <div id="loginView" class="hidden">
+                <div class="header" onclick="unlockAdmin()">
+                    <h1>Regal Crest</h1>
+                    <div class="subtitle">Executive Suite</div>
+                    <div class="launch-badge">Launch Date: 11 November 2026</div>
+                </div>
+
+                <div class="referral-card" style="background: rgba(212,175,55,0.05); margin-bottom: 12px;">
+                    <div style="font-size:11px; font-weight:900; color:var(--gold); margin-bottom:4px;">📲 Download Executive App (APK)</div>
+                    <button class="btn" style="margin:0; padding:8px; font-size:10px;" onclick="triggerDownload()">Download App Now</button>
+                </div>
+
+                <div class="form-group">
+                    <label>Mobile Number</label>
+                    <input type="tel" id="logMobile" placeholder="03001234567">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="logPassword" placeholder="Enter password">
+                </div>
+
+                <button class="btn" onclick="handleLogin()">Login Account</button>
+                
+                <div class="switch-link">
+                    Don't have an account? <span onclick="showView('signupView')">Register Here</span>
+                </div>
+            </div>
+
+            <!-- ADMIN LOGIN VIEW -->
+            <div id="adminLoginView" class="hidden">
+                <div class="header">
+                    <h1>Admin Portal</h1>
+                    <div class="subtitle">Management Control</div>
+                </div>
+                <div class="form-group">
+                    <label>Passcode (Owner: sara123)</label>
+                    <input type="password" id="adminPass" placeholder="Enter passcode">
+                </div>
+                <button class="btn" onclick="handleAdminLogin()">Authorize Admin</button>
+                <button class="btn btn-outline" style="margin-top:6px;" onclick="showView('loginView')">Back</button>
+            </div>
+
+            <!-- DASHBOARD VIEW -->
+            <div id="dashboardView" class="hidden">
+                <div class="header">
+                    <h1 id="dashGreeting">Welcome, Investor</h1>
+                    <div class="subtitle">Regal Crest Executive Suite</div>
+                    <div class="launch-badge">Launch Date: 11 November 2026</div>
+                </div>
+
+                <div class="balance-box">
+                    <h3>Available Wallet Balance</h3>
+                    <h1 id="userBalance">PKR 0.00</h1>
+                </div>
+
+                <button class="btn btn-green" style="margin-bottom: 12px;" onclick="claimEarnings()">⚡ Claim Today's Earning (PKR 70)</button>
+
+                <div class="dash-stats">
+                    <div class="stat-card">
+                        <h4>Daily Earning</h4>
+                        <p id="statDaily">PKR 70</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Total Earning</h4>
+                        <p id="statTotal">PKR 4,200</p>
+                    </div>
+                </div>
+
+                <div class="referral-card">
+                    <div style="font-size:10px; font-weight:bold; color:var(--gold);">🎁 Referral Link:</div>
+                    <div id="refLinkText" style="font-size:9px; color:var(--cream); word-break:break-all; margin:4px 0;">...</div>
+                    <button class="btn btn-outline" style="padding:4px; font-size:9px;" onclick="copyRefLink()">📋 Copy Link</button>
+                </div>
+
+                <div style="font-size:11px; font-weight:bold; color:var(--gold); margin-bottom:6px;">Active Investment Package</div>
+                <div class="plans-grid">
+                    <div class="plan-card">
+                        <div class="plan-info">
+                            <h3>Tier II - Bronze Executive</h3>
+                            <p>Daily: PKR 70 | Total (60D): PKR 4,200</p>
+                        </div>
+                        <div style="background:var(--green); color:#fff; font-size:9px; font-weight:800; padding:3px 8px; border-radius:4px;">Active</div>
+                    </div>
+                </div>
+
+                <button class="btn" style="background:#8B0000; margin-top:10px;" onclick="handleLogout()">Logout Account</button>
+            </div>
+
+            <!-- DEPOSIT VIEW -->
+            <div id="depositView" class="hidden">
+                <div class="header">
+                    <h1>Deposit Funds</h1>
+                    <div class="subtitle">Official Account: 03416711193</div>
+                </div>
+                <div class="form-group">
+                    <label>Select Wallet</label>
+                    <select id="depWallet"><option>Easypaisa</option><option>JazzCash</option></select>
+                </div>
+                <div class="form-group">
+                    <label>Amount (PKR)</label>
+                    <input type="number" id="depAmount" placeholder="Enter amount">
+                </div>
+                <button class="btn" onclick="submitDeposit()">Submit Deposit Request</button>
+            </div>
+
+            <!-- WITHDRAW VIEW -->
+            <div id="withdrawView" class="hidden">
+                <div class="header">
+                    <h1>Withdraw Funds</h1>
+                    <div class="subtitle">10% Tax Applicable</div>
+                </div>
+                <div class="form-group">
+                    <label>Withdrawal Amount (PKR)</label>
+                    <input type="number" id="withAmount" placeholder="Enter amount">
+                </div>
+                <div class="form-group">
+                    <label>Account Number</label>
+                    <input type="tel" id="withAccount" placeholder="03001234567">
+                </div>
+                <button class="btn" onclick="submitWithdraw()">Submit Withdrawal</button>
+            </div>
+
+            <!-- MENU VIEW -->
+            <div id="menuView" class="hidden">
+                <div class="header">
+                    <h1>Executive Menu</h1>
+                    <div class="subtitle">Options & Settings</div>
+                </div>
+                <button class="btn" style="margin-bottom:8px;" onclick="triggerDownload()">📲 Download App (APK)</button>
+                <button class="btn btn-outline" style="margin-bottom:8px;" onclick="showToast('Customer Support: Telegram @RegalCrestSupport')">💬 Support Helpline</button>
+                <button class="btn" style="background:#8B0000;" onclick="handleLogout()">Logout Account</button>
+            </div>
+
+            <!-- ADMIN PANEL VIEW -->
+            <div id="adminPanelView" class="hidden">
+                <div class="header">
+                    <h1>Admin Control Panel</h1>
+                    <div class="subtitle">Cloud Firebase Real-Time Sync</div>
+                </div>
+
+                <div class="admin-section">
+                    <h3>📥 Manage App Download Link</h3>
+                    <input type="text" id="adminApkInput" placeholder="Paste APK direct link here" style="margin-bottom:6px;">
+                    <button class="btn" style="padding:6px; font-size:10px;" onclick="saveApkLink()">Update Link Publicly</button>
+                </div>
+
+                <div class="admin-section">
+                    <h3>👥 Cloud Users Database</h3>
+                    <div id="adminUserList" style="max-height:140px; overflow-y:auto; font-size:10px;"></div>
+                </div>
+
+                <button class="btn btn-outline" onclick="showView('dashboardView')">Back to Dashboard</button>
+            </div>
+
+        </div>
+
+        <!-- NAVIGATION BAR -->
+        <div class="nav-bar" id="bottomNavBar" style="display:none;">
+            <div class="nav-item active" onclick="switchNav('dashboardView', this)">Home</div>
+            <div class="nav-item" onclick="switchNav('depositView', this)">Deposit</div>
+            <div class="nav-item" onclick="switchNav('withdrawView', this)">Withdraw</div>
+            <div class="nav-item" onclick="switchNav('menuView', this)">Menu</div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyIrYXLp35o1ZQ8LC5...",
+            authDomain: "orion-capital-99199.firebaseapp.com",
+            projectId: "orion-capital-99199",
+            storageBucket: "orion-capital-99199.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:12345678:web:abcdef"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        let tapCount = 0;
+        let cachedUsers = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initFirebaseListeners();
+            const savedUser = localStorage.getItem('regal_user_mobile');
+            if (savedUser) {
+                showView('dashboardView');
+                document.getElementById('bottomNavBar').style.display = 'flex';
+            } else {
+                showView('signupView');
+            }
+        });
+
+        function initFirebaseListeners() {
+            db.collection("regal_users").onSnapshot((snapshot) => {
+                cachedUsers = [];
+                snapshot.forEach(doc => cachedUsers.push(doc.data()));
+                const savedUser = localStorage.getItem('regal_user_mobile');
+                if(savedUser && !document.getElementById('dashboardView').classList.contains('hidden')) {
+                    loadDashboard();
+                }
+                if(!document.getElementById('adminPanelView').classList.contains('hidden')) {
+                    loadAdminPanel();
+                }
+            });
+        }
+
+        function showView(viewId) {
+            ['signupView', 'loginView', 'adminLoginView', 'dashboardView', 'depositView', 'withdrawView', 'menuView', 'adminPanelView'].forEach(v => {
+                const el = document.getElementById(v);
+                if(el) el.classList.add('hidden');
+            });
+            const target = document.getElementById(viewId);
+            if(target) target.classList.remove('hidden');
+
+            const navBar = document.getElementById('bottomNavBar');
+            if(['dashboardView', 'depositView', 'withdrawView', 'menuView'].includes(viewId)) {
+                navBar.style.display = 'flex';
+            } else {
+                navBar.style.display = 'none';
+            }
+
+            if(viewId === 'dashboardView') loadDashboard();
+            if(viewId === 'adminPanelView') loadAdminPanel();
+        }
+
+        function switchNav(viewId, el) {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            showView(viewId);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastBox');
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        function unlockAdmin() {
+            tapCount++;
+            setTimeout(() => { tapCount = 0; }, 1000);
+            if(tapCount >= 5) {
+                tapCount = 0;
+                showView('adminLoginView');
+            }
+        }
+
+        function triggerDownload() {
+            let link = localStorage.getItem('regal_apk_link') || "https://drive.google.com/uc?export=download&id=1o4shO-uHZh3oQbclTh13_L0euXw3ajad";
+            window.open(link, '_blank');
+        }
+
+        function handleSignUp() {
+            const name = document.getElementById('suName').value.trim();
+            const mobile = document.getElementById('suMobile').value.trim();
+            const pass = document.getElementById('suPassword').value;
+
+            if(!name || !mobile || !pass) {
+                showToast("Please fill all fields!");
+                return;
+            }
+
+            const newUser = {
+                name: name,
+                mobile: mobile,
+                pass: pass,
+                balance: 0.00,
+                refCode: "RC" + Math.floor(1000 + Math.random() * 9000)
+            };
+
+            db.collection("regal_users").doc(mobile).set(newUser).then(() => {
+                localStorage.setItem('regal_user_mobile', mobile);
+                showToast("Account Created Successfully!");
+                showView('dashboardView');
+            }).catch(err => {
+                showToast("Error: " + err.message);
+            });
+        }
+
+        function handleLogin() {
+            const mobile = document.getElementById('logMobile').value.trim();
+            const pass = document.getElementById('logPassword').value;
+
+            if(!mobile || !pass) {
+                showToast("Enter Mobile Number and Password!");
+                return;
+            }
+
+            db.collection("regal_users").doc(mobile).get().then(doc => {
+                if(!doc.exists) {
+                    showToast("Account not found!");
+                    return;
+                }
+                const user = doc.data();
+                if(user.pass !== pass) {
+                    showToast("Incorrect Password!");
+                    return;
+                }
+
+                localStorage.setItem('regal_user_mobile', user.mobile);
+                showToast("Login Successful!");
+                showView('dashboardView');
+            }).catch(err => {
+                showToast("Error: " + err.message);
+            });
+        }
+
+        function handleAdminLogin() {
+            const pass = document.getElementById('adminPass').value;
+            if(pass === 'sara123') {
+                showToast("Admin Authorized!");
+                showView('adminPanelView');
+            } else {
+                showToast("Wrong Passcode!");
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('regal_user_mobile');
+            showToast("Logged out successfully.");
+            showView('signupView');
+        }
+
+        function loadDashboard() {
+            const mobile = localStorage.getItem('regal_user_mobile');
+            if(!mobile) { showView('signupView'); return; }
+
+            const user = cachedUsers.find(u => u.mobile === mobile);
+            if(!user) return;
+
+            document.getElementById('dashGreeting').innerText = "Welcome, " + user.name;
+            document.getElementById('userBalance').innerText = "PKR " + (user.balance || 0).toFixed(2);
+            document.getElementById('refLinkText').innerText = window.location.origin + "/?ref=" + user.refCode;
+        }
+
+        function claimEarnings() {
+            const mobile = localStorage.getItem('regal_user_mobile');
+            const user = cachedUsers.find(u => u.mobile === mobile);
+            if(!user) return;
+
+            user.balance = (user.balance || 0) + 70;
+            db.collection("regal_users").doc(mobile).set(user, { merge: true }).then(() => {
+                showToast("PKR 70 Claimed Successfully & Added to Balance!");
+            });
+        }
+
+        function submitDeposit() {
+            const amt = document.getElementById('depAmount').value;
+            if(!amt) { showToast("Enter deposit amount!"); return; }
+            showToast("Deposit request submitted successfully!");
+            showView('dashboardView');
+        }
+
+        function submitWithdraw() {
+            const amt = parseFloat(document.getElementById('withAmount').value);
+            const mobile = localStorage.getItem('regal_user_mobile');
+            const user = cachedUsers.find(u => u.mobile === mobile);
+
+            if(!amt || amt <= 0) { showToast("Enter valid amount!"); return; }
+            if(user.balance < amt) { showToast("Insufficient Wallet Balance!"); return; }
+
+            user.balance -= amt;
+            db.collection("regal_users").doc(user.mobile).set(user, { merge: true }).then(() => {
+                showToast("Withdrawal request submitted successfully!");
+                showView('dashboardView');
+            });
+        }
+
+        function loadAdminPanel() {
+            const container = document.getElementById('adminUserList');
+            container.innerHTML = "";
+            if(cachedUsers.length === 0) {
+                container.innerHTML = "<div>No users found.</div>";
+                return;
+            }
+            cachedUsers.forEach(u => {
+                container.innerHTML += `<div style="padding:4px; border-bottom:1px solid rgba(212,175,55,0.2);"><b>${u.name}</b> (${u.mobile}) - Bal: PKR ${u.balance.toFixed(2)}</div>`;
+            });
+        }
+
+        function saveApkLink() {
+            const link = document.getElementById('adminApkInput').value.trim();
+            if(!link) { showToast("Enter valid link!"); return; }
+            localStorage.setItem('regal_apk_link', link);
+            showToast("APK Link Updated Publicly!");
+        }
+
+        function copyRefLink() {
+            navigator.clipboard.writeText(document.getElementById('refLinkText').innerText);
+            showToast("Referral Link Copied!");
+        }
+    </script>
+</body>
+</html>
