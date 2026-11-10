@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Regal Crest - Executive Investment Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0B0F19;
+      --card-bg: #101828;
+      --card-border: #1E293B;
+      --gold-primary: #FFD700;
+      --gold-gradient: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #FBF5B7 75%, #AA771C 100%);
+      --text-main: #F8FAFC;
+      --text-sub: #94A3B8;
+      --accent-red: #EF4444;
+      --accent-green: #10B981;
+      --accent-blue: #38BDF8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; user-select: none; }
+    body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; overflow-x: hidden; position: relative; }
+
+    .app-header {
+      background: rgba(16, 24, 40, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+      padding: 14px 18px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .crown-icon { font-size: 24px; filter: drop-shadow(0 0 8px rgba(255,215,0,0.4)); }
+    .brand-text { font-family: 'Cinzel', serif; font-weight: 700; font-size: 17px; background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .back-btn { background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); color: var(--gold-primary); padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+    .page { display: none; padding: 16px; max-width: 480px; margin: 0 auto; padding-bottom: 90px; }
+    .page.active { display: block; }
+
+    .gold-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px; padding: 20px; margin-bottom: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+      position: relative; overflow: hidden;
+    }
+    .gold-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--gold-gradient);
+    }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 12px; color: var(--text-sub); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+    .input-wrapper { position: relative; }
+    .form-input {
+      width: 100%; background: rgba(11, 15, 25, 0.8); border: 1px solid var(--card-border);
+      color: #fff; padding: 12px 14px; border-radius: 10px; font-size: 14px; outline: none;
+    }
+    .form-input:focus { border-color: var(--gold-primary); }
+    .toggle-pass { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--gold-primary); font-weight: 700; font-size: 12px; cursor: pointer; }
+
+    .btn-gold {
+      width: 100%; background: var(--gold-gradient); color: #000; font-weight: 800; font-size: 14px;
+      padding: 14px; border: none; border-radius: 10px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .btn-outline {
+      width: 100%; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-primary);
+      font-weight: 700; font-size: 13px; padding: 12px; border-radius: 10px; cursor: pointer; margin-top: 10px;
+    }
+
+    .nav-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: rgba(16, 24, 40, 0.95);
+      backdrop-filter: blur(16px); border-top: 1px solid rgba(255, 215, 0, 0.15);
+      display: flex; justify-content: space-around; padding: 10px 0; z-index: 99; max-width: 480px; margin: 0 auto;
+    }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-sub); font-size: 11px; font-weight: 600; cursor: pointer; }
+    .nav-item.active { color: var(--gold-primary); }
+    .nav-icon { font-size: 18px; }
+
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 200; justify-content: center; align-items: center; padding: 20px; }
+    .modal.active { display: flex; }
+    .modal-box { background: var(--card-bg); border: 1px solid var(--gold-primary); width: 100%; max-width: 400px; border-radius: 18px; padding: 22px; position: relative; max-height: 85vh; overflow-y: auto; }
+
+    .badge-status { padding: 4px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; display: inline-block; }
+    .status-pending { background: rgba(234, 179, 8, 0.15); color: #EAB308; border: 1px solid #EAB308; }
+    .status-success { background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid #10B981; }
+    .status-rejected { background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid #EF4444; }
+
+    .kill-screen { display: none; position: fixed; inset: 0; background: #050505; color: #EF4444; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+    .kill-screen.active { display: flex; }
+
+    /* FLOWER PETALS FALLING ANIMATION */
+    .flower-petal {
+      position: fixed;
+      top: -50px;
+      z-index: 99999;
+      user-select: none;
+      pointer-events: none;
+      animation: fallPetal linear forwards;
+    }
+    @keyframes fallPetal {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(105vh) rotate(360deg); opacity: 0.2; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="killScreen" class="kill-screen">
+    <h1 style="font-family:'Cinzel'; font-size:32px; margin-bottom:12px;">SYSTEM OFFLINE</h1>
+    <p style="color:#94A3B8; font-size:14px; max-width:320px;">Regal Crest services are currently under scheduled nationwide emergency maintenance.</p>
+  </div>
+
+  <header class="app-header">
+    <div class="brand" onclick="handleLogoClick()">
+      <span class="crown-icon">👑</span>
+      <div>
+        <div class="brand-text">REGAL CREST</div>
+        <div style="font-size: 9px; color: var(--gold-primary); letter-spacing: 1px;">EXECUTIVE SUITE</div>
+      </div>
+    </div>
+    <div id="headerActions" style="display:flex; gap:8px;">
+      <button class="back-btn" id="universalBackBtn" onclick="goBack()" style="display:none;">← Back</button>
+      <button class="back-btn" onclick="openChatModal()">💬 Support</button>
+    </div>
+  </header>
+
+  <!-- AUTH PAGE -->
+  <div id="pageAuth" class="page active">
+    <div class="gold-card" style="margin-top: 20px;">
+      <h2 id="authTitle" style="font-family:'Cinzel'; color:var(--gold-primary); text-align:center; margin-bottom: 20px;">CREATE ACCOUNT</h2>
+      
+      <div id="signupFields">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="regName" class="form-input" placeholder="Enter your full name">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Mobile Number</label>
+        <input type="tel" id="authPhone" class="form-input" placeholder="03XXXXXXXXX">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-wrapper">
+          <input type="password" id="authPass" class="form-input" placeholder="••••••••">
+          <span class="toggle-pass" onclick="togglePass('authPass', this)">Show</span>
+        </div>
+      </div>
+
+      <div id="signupExtra">
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <div class="input-wrapper">
+            <input type="password" id="regConfirmPass" class="form-input" placeholder="••••••••">
+            <span class="toggle-pass" onclick="togglePass('regConfirmPass', this)">Show</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Referral Code</label>
+          <input type="text" id="regRefCode" class="form-input" value="139722" placeholder="Enter referral code">
+        </div>
+      </div>
+
+      <button class="btn-gold" id="authSubmitBtn" onclick="handleAuth()">CREATE ACCOUNT</button>
+      <button class="btn-outline" id="authToggleBtn" onclick="toggleAuthMode()">Switch to Login</button>
+      <div id="forgotBtn" style="text-align:center; margin-top:14px; font-size:12px; color:var(--gold-primary); cursor:pointer; display:none;" onclick="showCustomAlert('Please contact Support to reset your password.')">Forgot Password?</div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="pageDashboard" class="page">
+    <div class="gold-card" style="text-align:center; background: linear-gradient(180deg, #101828 0%, #0B0F19 100%);">
+      <div style="font-size:11px; color:var(--gold-primary); letter-spacing:1px; margin-bottom:4px;">LAUNCH DATE: 11 NOVEMBER 2026</div>
+      <h3 style="font-family:'Cinzel'; font-size:22px; color:#fff;" id="userNameDisplay">Welcome, Member</h3>
+      
+      <button class="btn-gold" style="margin-top:14px; padding:10px; font-size:13px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="downloadAppAPK()">
+        <span>📱</span> Download Executive App (APK)
+      </button>
+
+      <div style="margin-top:14px; background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.3); padding:10px; border-radius:10px;">
+        <div style="font-size:11px; color:var(--text-sub);">AVAILABLE WALLET BALANCE</div>
+        <div style="font-size:20px; font-weight:800; color:var(--gold-primary);" id="dashWalletBalance">PKR 0</div>
+      </div>
+
+      <!-- DASHBOARD CLAIM DAILY EARNING BUTTON -->
+      <div style="margin-top:12px;" id="claimSection">
+        <button class="btn-gold" id="claimDailyBtn" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color:#fff; font-size:13px; padding:12px;" onclick="claimDailyEarning()">
+          ⚡ CLAIM TODAY'S EARNING (PKR <span id="claimableAmt">0</span>)
+        </button>
+      </div>
+
+      <div style="margin-top:12px; display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <div style="background:rgba(255,215,0,0.05); border:1px solid rgba(255,215,0,0.2); padding:12px; border-radius:12px;">
+          <div style="font-size:11px; color:var(--text-sub);">DAILY EARNING</div>
+          <div style="font-size:18px; font-weight:800; color:var(--gold-primary);" id="dashDailyEarn">PKR 0</div>
+        </div>
+        <div style="background:rgba(255,215,0,0.05); border:1px solid rgba(255,215,0,0.2); padding:12px; border-radius:12px;">
+          <div style="font-size:11px; color:var(--text-sub);">TOTAL EARNING</div>
+          <div style="font-size:18px; font-weight:800; color:var(--accent-green);" id="dashTotalEarn">PKR 0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY ACTIVE INVESTMENT PACKAGES -->
+    <div class="gold-card">
+      <div style="font-size:12px; font-weight:700; color:var(--gold-primary); margin-bottom:8px;">MY ACTIVE INVESTMENT PACKAGES</div>
+      <div id="activePlansContainer" style="font-size:13px; color:var(--text-sub);">No active package subscribed yet.</div>
+    </div>
+
+    <!-- EARNING & TRANSACTION LEDGER FOLDER -->
+    <div class="gold-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="font-size:12px; font-weight:700; color:var(--gold-primary);">📊 FINANCIAL LEDGER & ACTIVITY</div>
+      </div>
+      <div id="financialLedgerList" style="font-size:12px; color:var(--text-sub); max-height:150px; overflow-y:auto; display:grid; gap:6px;">
+        <div>No transactions or claims recorded yet.</div>
+      </div>
+    </div>
+
+    <!-- REFERRAL & INVITE LINK SECTION -->
+    <div class="gold-card">
+      <div style="font-size:12px; font-weight:700; color:var(--gold-primary); margin-bottom:8px;">REFERRAL & INVITE LINK (20% REWARD)</div>
+      <div style="margin-bottom:10px;">
+        <input type="text" id="refLinkInput" class="form-input" readonly value="https://regalcrest.app/ref=139722" style="font-size:12px; background:rgba(0,0,0,0.5);">
+      </div>
+      <button class="btn-gold" style="padding:14px; font-size:14px; margin-bottom:12px;" onclick="copyRefLink()">📋 COPY REFERRAL LINK</button>
+      
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
+        <button class="btn-outline" style="margin:0; font-size:11px; padding:10px;" onclick="shareSocial('wa')">WhatsApp</button>
+        <button class="btn-outline" style="margin:0; font-size:11px; padding:10px;" onclick="shareSocial('tg')">Telegram</button>
+        <button class="btn-outline" style="margin:0; font-size:11px; padding:10px;" onclick="shareSocial('fb')">Facebook</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLANS -->
+  <div id="pagePlans" class="page">
+    <h3 style="font-family:'Cinzel'; color:var(--gold-primary); margin-bottom:14px;">EXECUTIVE INVESTMENT TIERS</h3>
+    <div id="plansGrid" style="display:grid; gap:12px;"></div>
+  </div>
+
+  <!-- DEPOSIT -->
+  <div id="pageDeposit" class="page">
+    <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+      <button class="btn-outline" style="margin:0; width:48%;" onclick="switchDepositTab('new')">New Deposit</button>
+      <button class="btn-outline" style="margin:0; width:48%;" onclick="switchDepositTab('history')">Deposit History</button>
+    </div>
+
+    <div id="depNewTab">
+      <div class="gold-card">
+        <div style="font-size:12px; color:var(--text-sub); margin-bottom:6px;">OFFICIAL PAYMENT ACCOUNT</div>
+        <div style="font-size:18px; font-weight:800; color:var(--gold-primary); margin-bottom:4px;">03416711193</div>
+        <div style="font-size:12px; color:#fff; margin-bottom:10px;">Title: EasyPaisa / JazzCash Receiver</div>
+        <button class="btn-outline" style="margin:0; padding:6px; font-size:11px;" onclick="navigator.clipboard.writeText('03416711193'); showCustomAlert('Account number copied!');">Copy Account Number</button>
+        <div style="font-size:11px; color:var(--accent-green); margin-top:10px;">⚡ Approval Time: Within 2 Hours</div>
+      </div>
+
+      <div class="gold-card">
+        <div class="form-group">
+          <label class="form-label">Select Wallet</label>
+          <select id="depWallet" class="form-input">
+            <option value="EasyPaisa">EasyPaisa</option>
+            <option value="JazzCash">JazzCash</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deposit Amount (PKR)</label>
+          <input type="number" id="depAmount" class="form-input" placeholder="Enter amount">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Transaction Screenshot (Mandatory)</label>
+          <input type="file" id="depProof" class="form-input" accept="image/*">
+        </div>
+        <button class="btn-gold" onclick="submitDeposit()">SUBMIT DEPOSIT</button>
+      </div>
+    </div>
+
+    <div id="depHistoryTab" style="display:none;">
+      <div class="gold-card">
+        <div style="font-size:13px; font-weight:700; color:var(--gold-primary); margin-bottom:10px;">MY DEPOSIT HISTORY</div>
+        <div id="depHistoryList" style="display:grid; gap:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WITHDRAW -->
+  <div id="pageWithdraw" class="page">
+    <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+      <button class="btn-outline" style="margin:0; width:48%;" onclick="switchWithdrawTab('new')">New Withdrawal</button>
+      <button class="btn-outline" style="margin:0; width:48%;" onclick="switchWithdrawTab('history')">Withdraw History</button>
+    </div>
+
+    <div id="wdNewTab">
+      <div class="gold-card">
+        <div style="font-size:11px; color:var(--text-sub);">MINIMUM WITHDRAWAL: PKR 200</div>
+        <div style="font-size:11px; color:var(--gold-primary); margin-top:2px;">PROCESSING TIME: 24 - 48 HOURS (10% FEE)</div>
+      </div>
+
+      <div class="gold-card">
+        <div class="form-group">
+          <label class="form-label">Select Wallet</label>
+          <select id="wdWallet" class="form-input">
+            <option value="EasyPaisa">EasyPaisa</option>
+            <option value="JazzCash">JazzCash</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Holder Name</label>
+          <input type="text" id="wdTitle" class="form-input" placeholder="Account Title">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Mobile Number</label>
+          <input type="tel" id="wdNum" class="form-input" placeholder="03XXXXXXXXX">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount (PKR)</label>
+          <input type="number" id="wdAmount" class="form-input" placeholder="Min PKR 200" oninput="calcWithdrawFee()">
+        </div>
+
+        <div style="background:rgba(255,215,0,0.05); border:1px dashed rgba(255,215,0,0.3); padding:12px; border-radius:10px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+            <span style="color:var(--text-sub);">Requested:</span> <span id="feeReq">PKR 0</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+            <span style="color:var(--text-sub);">Fee (10%):</span> <span id="feeCut" style="color:var(--accent-red);">PKR 0</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700;">
+            <span style="color:var(--gold-primary);">You Receive:</span> <span id="feeNet" style="color:var(--accent-green);">PKR 0</span>
+          </div>
+        </div>
+
+        <button class="btn-gold" onclick="submitWithdraw()">REQUEST WITHDRAWAL</button>
+      </div>
+    </div>
+
+    <div id="wdHistoryTab" style="display:none;">
+      <div class="gold-card">
+        <div style="font-size:13px; font-weight:700; color:var(--gold-primary); margin-bottom:10px;">WITHDRAWAL HISTORY</div>
+        <div id="wdHistoryList" style="display:grid; gap:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="pageAdmin" class="page">
+    <div class="gold-card" style="border-color:var(--accent-red);">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:14px; font-weight:800; color:var(--accent-red);">EMERGENCY KILL SWITCH</div>
+          <div style="font-size:11px; color:var(--text-sub);">Lock app access nationwide</div>
+        </div>
+        <button class="btn-gold" id="killSwitchBtn" style="width:auto; padding:8px 16px; background:var(--accent-red); color:#fff;" onclick="toggleKillSwitch()">OFF</button>
+      </div>
+    </div>
+
+    <div class="gold-card">
+      <div style="font-size:12px; color:var(--gold-primary); font-weight:700; margin-bottom:8px;" id="adminPanelTitle">PLATFORM STATS</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px; margin-bottom:10px;">
+        <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px;">Total Users: <b id="admUsersCount">0</b></div>
+        <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px;">Depositors: <b id="admDepCount">0</b></div>
+        <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px;">Total Dep: <b id="admTotalDep">PKR 0</b></div>
+        <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px;">Total Wd: <b id="admTotalWd">PKR 0</b></div>
+      </div>
+      <div style="background:rgba(255,215,0,0.05); border:1px solid rgba(255,215,0,0.2); padding:10px; border-radius:8px; font-size:12px;">
+        <div style="color:var(--gold-primary); font-weight:700; margin-bottom:2px;" id="adminProfitLabel">My Revenue / Profit:</div>
+        <div style="font-size:16px; font-weight:800; color:var(--accent-green);" id="admProfitVal">PKR 0</div>
+      </div>
+    </div>
+
+    <div class="gold-card">
+      <div style="font-size:12px; color:var(--gold-primary); font-weight:700; margin-bottom:8px;">PUBLIC LINKS PUBLISHER</div>
+      <div class="form-group">
+        <label class="form-label">Public Invite Domain Link</label>
+        <input type="text" id="admInviteLink" class="form-input" value="https://regalcrest-invest.app">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Public APK Download Link</label>
+        <input type="text" id="admApkLink" class="form-input" value="https://regalcrest-invest.app/download.apk">
+      </div>
+      <button class="btn-gold" onclick="updateAdminLinks()">PUBLISH LINKS</button>
+    </div>
+
+    <!-- SEPARATE REQUEST FOLDERS -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+      <button class="btn-outline" style="margin:0; font-size:11px;" onclick="openAdminFolder('ep_dep')">EasyPaisa Dep Requests</button>
+      <button class="btn-outline" style="margin:0; font-size:11px;" onclick="openAdminFolder('jc_dep')">JazzCash Dep Requests</button>
+      <button class="btn-outline" style="margin:0; font-size:11px;" onclick="openAdminFolder('ep_wd')">EasyPaisa Wd Requests</button>
+      <button class="btn-outline" style="margin:0; font-size:11px;" onclick="openAdminFolder('jc_wd')">JazzCash Wd Requests</button>
+    </div>
+
+    <!-- USER MANAGEMENT WITH DETAILED DEPOSIT / WITHDRAW STATUS -->
+    <div class="gold-card">
+      <div style="font-size:12px; color:var(--gold-primary); font-weight:700; margin-bottom:8px;">USER MANAGEMENT & LIVE STATUS (<span id="admAllUsersCount">0</span>)</div>
+      <div id="adminUserList" style="display:grid; gap:8px;"></div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION BAR -->
+  <nav class="nav-bar" id="appNavBar" style="display:none;">
+    <div class="nav-item active" onclick="navTo('pageDashboard', this)"><span class="nav-icon">🏛️</span>Home</div>
+    <div class="nav-item" onclick="navTo('pagePlans', this)"><span class="nav-icon">💎</span>Plans</div>
+    <div class="nav-item" onclick="navTo('pageDeposit', this)"><span class="nav-icon">📥</span>Deposit</div>
+    <div class="nav-item" onclick="navTo('pageWithdraw', this)"><span class="nav-icon">📤</span>Withdraw</div>
+    <div class="nav-item" onclick="openMenuModal()"><span class="nav-icon">☰</span>Menu</div>
+  </nav>
+
+  <!-- LUXURY MENU MODAL -->
+  <div id="menuModal" class="modal">
+    <div class="modal-box" style="text-align:center;">
+      <h3 style="font-family:'Cinzel'; color:var(--gold-primary); margin-bottom:16px;">EXECUTIVE MENU</h3>
+      
+      <!-- ADMIN NOTIFICATION FEED -->
+      <div id="adminMenuFeed" style="display:none; margin-bottom:16px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,215,0,0.3); border-radius:12px; padding:12px; text-align:left;">
+        <div style="font-size:11px; color:var(--gold-primary); font-weight:700; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+          <span>🚨 ADMIN LIVE ALERTS</span>
+          <span style="font-size:9px; color:var(--text-sub); cursor:pointer;" onclick="clearAdminAlerts()">Clear</span>
+        </div>
+        <div id="adminAlertsList" style="max-height:120px; overflow-y:auto; display:grid; gap:4px; font-size:11px; color:#fff;">
+          <div style="color:var(--text-sub);">No recent activity alerts.</div>
+        </div>
+      </div>
+
+      <div style="display:grid; gap:10px;">
+        <button class="btn-outline" style="margin:0;" onclick="closeModal('menuModal'); openChangePassModal()">🔑 Change Password</button>
+        <button class="btn-outline" style="margin:0;" onclick="closeModal('menuModal'); switchAnotherAccount()">👤 Switch Another Account</button>
+        <button class="btn-gold" style="margin-top:6px; background:var(--accent-red); color:#fff;" onclick="closeModal('menuModal'); logout()">🚪 Logout</button>
+      </div>
+      <button class="btn-outline" style="margin-top:14px; border-color:var(--text-sub); color:var(--text-sub);" onclick="closeModal('menuModal')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- CHANGE PASSWORD MODAL -->
+  <div id="changePassModal" class="modal">
+    <div class="modal-box">
+      <h3 style="font-family:'Cinzel'; color:var(--gold-primary); text-align:center; margin-bottom:14px;">CHANGE PASSWORD</h3>
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input type="password" id="newPassInput" class="form-input" placeholder="Enter new password">
+      </div>
+      <button class="btn-gold" onclick="submitChangePassword()">UPDATE PASSWORD</button>
+      <button class="btn-outline" onclick="closeModal('changePassModal')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- CUSTOM ALERT MODAL -->
+  <div id="customAlertModal" class="modal">
+    <div class="modal-box" style="text-align:center;">
+      <div style="font-size:32px; margin-bottom:8px;">👑</div>
+      <div style="font-family:'Cinzel'; color:var(--gold-primary); font-weight:700; font-size:16px; margin-bottom:8px;">REGAL CREST</div>
+      <div id="customAlertText" style="font-size:13px; color:#fff; margin-bottom:18px; line-height:1.4;"></div>
+      <button class="btn-gold" onclick="closeModal('customAlertModal')">OK</button>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+  <div id="adminAuthModal" class="modal">
+    <div class="modal-box">
+      <h3 style="font-family:'Cinzel'; color:var(--gold-primary); text-align:center; margin-bottom:14px;">STEALTH ADMIN AUTH</h3>
+      <div class="form-group">
+        <label class="form-label">Security Access Passcode</label>
+        <input type="password" id="adminPassInput" class="form-input" placeholder="Enter fixed passcode">
+      </div>
+      <button class="btn-gold" onclick="verifyAdminPass()">AUTHENTICATE</button>
+      <button class="btn-outline" onclick="closeModal('adminAuthModal')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- SUPPORT CHAT MODAL -->
+  <div id="chatModal" class="modal">
+    <div class="modal-box" style="height:88vh; display:flex; flex-direction:column;">
+      <div style="font-family:'Cinzel'; color:var(--gold-primary); font-weight:700; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span id="chatModalHeaderTitle">IN-APP EXECUTIVE SUPPORT</span>
+        <span style="cursor:pointer;" onclick="closeModal('chatModal')">✕</span>
+      </div>
+
+      <div style="display:flex; gap:4px; margin-bottom:6px; overflow-x:auto; padding-bottom:4px;" id="chatTargetTabs">
+        <button class="btn-outline" style="margin:0; padding:4px 8px; font-size:10px;" onclick="switchChatTarget('owner')">👑 Owner (Sara)</button>
+        <button class="btn-outline" style="margin:0; padding:4px 8px; font-size:10px;" onclick="switchChatTarget('admin1')">🛡️ Admin (Maha)</button>
+        <button class="btn-outline" style="margin:0; padding:4px 8px; font-size:10px;" onclick="switchChatTarget('admin2')">🛡️ Admin (Kainat)</button>
+        <button class="btn-outline" style="margin:0; padding:4px 8px; font-size:10px;" onclick="switchChatTarget('admin3')">🛡️ Admin (Zaman)</button>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="font-size:11px; color:var(--gold-primary);" id="activeChatIndicator">Chatting with: Owner (Sara)</div>
+        <button id="clearChatBtn" class="btn-outline" style="margin:0; padding:2px 8px; font-size:10px; border-color:var(--accent-red); color:var(--accent-red); display:none;" onclick="clearCurrentChat()">🗑️ Clear Chat</button>
+      </div>
+      
+      <div id="chatMessages" style="flex:1; overflow-y:auto; background:rgba(0,0,0,0.4); padding:10px; border-radius:10px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;">
+        <div style="background:var(--card-border); padding:8px 12px; border-radius:8px; max-width:80%; font-size:12px;">
+          <b>Support Team:</b> Welcome to Regal Crest Support. How may we assist your portfolio today?
+        </div>
+      </div>
+
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="chatInput" class="form-input" placeholder="Type message..." style="flex:1;">
+        <button class="btn-gold" style="width:auto; padding:0 16px;" onclick="sendChatMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="slipModal" class="modal">
+    <div class="modal-box" style="text-align:center;">
+      <h4 style="color:var(--gold-primary); margin-bottom:10px;">TRANSACTION SLIP INSPECTOR</h4>
+      <img id="slipImage" src="" style="max-width:100%; max-height:60vh; border-radius:10px; border:1px solid var(--gold-primary);" alt="Slip Proof">
+      <button class="btn-outline" onclick="closeModal('slipModal')">Close Inspector</button>
+    </div>
+  </div>
+
+  <div id="folderModal" class="modal">
+    <div class="modal-box" style="max-height:80vh; overflow-y:auto;">
+      <h4 id="folderTitle" style="color:var(--gold-primary); margin-bottom:12px;">REQUEST FOLDER</h4>
+      <div id="folderContent" style="display:grid; gap:10px;"></div>
+      <button class="btn-outline" onclick="closeModal('folderModal')">Close Folder</button>
+    </div>
+  </div>
+
+  <!-- FIREBASE SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD5T0_Et0NveTSF5xBoWWAyMLScHcItzbw",
+      authDomain: "regal-crest-e0bbf.firebaseapp.com",
+      projectId: "regal-crest-e0bbf",
+      storageBucket: "regal-crest-e0bbf.firebasestorage.app",
+      messagingSenderId: "211402330865",
+      appId: "1:211402330865:web:1e5163966b06f6a4bf0f50",
+      measurementId: "G-8R1VLCWG2E"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    window.db = db;
+    window.dbRef = ref;
+    window.dbSet = set;
+    window.dbOnValue = onValue;
+    window.dbUpdate = update;
+    window.dbRemove = remove;
+    window.dbGet = get;
+
+    initializeAppState();
+  </script>
+
+  <script>
+    const PLANS_DATA = [
+      { id: 1, price: 300, daily: 30, total: 1800, title: "Tier I - Starter Elite", refReward: 60 },
+      { id: 2, price: 500, daily: 70, total: 4200, title: "Tier II - Bronze Executive", refReward: 100 },
+      { id: 3, price: 750, daily: 95, total: 5700, title: "Tier III - Silver Prime", refReward: 150 },
+      { id: 4, price: 1000, daily: 140, total: 8400, title: "Tier IV - Gold Sovereign", refReward: 200 },
+      { id: 5, price: 1500, daily: 210, total: 12600, title: "Tier V - Platinum Crest", refReward: 300 },
+      { id: 6, price: 2000, daily: 290, total: 17400, title: "Tier VI - Diamond Crown", refReward: 400 },
+      { id: 7, price: 2500, daily: 370, total: 22200, title: "Tier VII - Titanium Prestige", refReward: 500 },
+      { id: 8, price: 3000, daily: 450, total: 27000, title: "Tier VIII - Royal Sovereign", refReward: 600 },
+      { id: 9, price: 3500, daily: 530, total: 31800, title: "Tier IX - Imperial Vanguard", refReward: 700 },
+      { id: 10, price: 4000, daily: 610, total: 36600, title: "Tier X - Grand Monarch", refReward: 800 },
+      { id: 11, price: 4500, daily: 690, total: 41400, title: "Tier XI - Dynasty Master", refReward: 900 },
+      { id: 12, price: 5000, daily: 780, total: 46800, title: "Tier XII - Supreme Apex", refReward: 1000 }
+    ];
+
+    let state = {
+      currentUser: JSON.parse(localStorage.getItem('rc_user_v2')) || null,
+      users: [],
+      deposits: [],
+      withdrawals: [],
+      chats: [],
+      adminAlerts: JSON.parse(localStorage.getItem('rc_admin_alerts')) || [],
+      killSwitch: false,
+      isAuthLogin: false,
+      logoClicks: 0,
+      currentAdminRole: null,
+      activeChatTarget: 'owner',
+      apkLink: 'https://regalcrest-invest.app/download.apk'
+    };
+
+    function showCustomAlert(msg) {
+      document.getElementById('customAlertText').innerText = msg;
+      openModal('customAlertModal');
+    }
+
+    function pushAdminAlert(msg) {
+      state.adminAlerts.unshift({ time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), text: msg });
+      if(state.adminAlerts.length > 20) state.adminAlerts.pop();
+      localStorage.setItem('rc_admin_alerts', JSON.stringify(state.adminAlerts));
+    }
+
+    function clearAdminAlerts() {
+      state.adminAlerts = [];
+      localStorage.removeItem('rc_admin_alerts');
+      renderAdminAlertsList();
+    }
+
+    function renderAdminAlertsList() {
+      const list = document.getElementById('adminAlertsList');
+      if(!state.adminAlerts.length) {
+        list.innerHTML = '<div style="color:var(--text-sub);">No recent activity alerts.</div>';
+        return;
+      }
+      list.innerHTML = state.adminAlerts.map(a => `
+        <div style="background:rgba(255,255,255,0.03); padding:6px; border-radius:6px; border-left:2px solid var(--gold-primary);">
+          <span style="color:var(--gold-primary); font-size:9px;">[${a.time}]</span> ${a.text}
+        </div>
+      `).join('');
+    }
+
+    function triggerFlowerAnimation() {
+      const flowers = ['🌸', '🌺', '🌷', '💮', '🌹', '🌻'];
+      for (let i = 0; i < 25; i++) {
+        const petal = document.createElement('div');
+        petal.className = 'flower-petal';
+        petal.innerText = flowers[Math.floor(Math.random() * flowers.length)];
+        petal.style.left = Math.random() * 100 + 'vw';
+        petal.style.fontSize = (Math.random() * 16 + 18) + 'px';
+        const duration = Math.random() * 2 + 2.5;
+        petal.style.animationDuration = duration + 's';
+        petal.style.animationDelay = (Math.random() * 0.8) + 's';
+        document.body.appendChild(petal);
+        setTimeout(() => {
+          petal.remove();
+        }, duration * 1000 + 1000);
+      }
+    }
+
+    function initializeAppState() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const refParam = urlParams.get('ref');
+      if(refParam) {
+        setTimeout(() => {
+          const refInput = document.getElementById('regRefCode');
+          if(refInput) refInput.value = refParam;
+        }, 500);
+      }
+
+      let lastChatLen = -1;
+      let lastDepLen = -1;
+      let lastWdLen = -1;
+
+      window.dbOnValue(window.dbRef(window.db, 'regal_crest'), (snapshot) => {
+        const data = snapshot.val() || {};
+        const newChats = data.chats ? Object.values(data.chats) : [];
+        const newDeps = data.deposits ? Object.values(data.deposits) : [];
+        const newWds = data.withdrawals ? Object.values(data.withdrawals) : [];
+
+        if(lastChatLen !== -1 && newChats.length > lastChatLen) {
+          const latest = newChats[newChats.length - 1];
+          if(latest && latest.sender === 'user') {
+            pushAdminAlert(`💬 Support message from ${latest.userName}`);
+          }
+        }
+        if(lastDepLen !== -1 && newDeps.length > lastDepLen) {
+          const latest = newDeps[newDeps.length - 1];
+          if(latest) {
+            pushAdminAlert(`📥 Deposit request: PKR ${latest.amount} (${latest.userName})`);
+          }
+        }
+        if(lastWdLen !== -1 && newWds.length > lastWdLen) {
+          const latest = newWds[newWds.length - 1];
+          if(latest) {
+            pushAdminAlert(`📤 Withdrawal request: PKR ${latest.amt} (${latest.userName})`);
+          }
+        }
+
+        lastChatLen = newChats.length;
+        lastDepLen = newDeps.length;
+        lastWdLen = newWds.length;
+
+        state.users = data.users ? Object.values(data.users) : [];
+        state.deposits = newDeps;
+        state.withdrawals = newWds;
+        state.chats = newChats;
+        state.killSwitch = data.killSwitch || false;
+        if(data.apkLink) state.apkLink = data.apkLink;
+
+        if(state.killSwitch) {
+          document.getElementById('killScreen').classList.add('active');
+        } else {
+          document.getElementById('killScreen').classList.remove('active');
+        }
+
+        if(state.currentUser) {
+          const fresh = state.users.find(u => String(u.id) === String(state.currentUser.id));
+          if(fresh) {
+            if(fresh.banned) { showCustomAlert("Your account has been suspended."); logout(); return; }
+            state.currentUser = fresh;
+            localStorage.setItem('rc_user_v2', JSON.stringify(state.currentUser));
+            if(document.getElementById('pageDashboard').classList.contains('active')) updateDashData();
+          }
+        }
+
+        if(document.getElementById('pageAdmin').classList.contains('active')) {
+          renderAdminStats();
+        }
+
+        if(document.getElementById('chatModal').classList.contains('active')) {
+          renderChatMessages();
+        }
+      });
+
+      renderPlans();
+      if(state.currentUser) {
+        openDashboard();
+      }
+    }
+
+    // MANUAL CLAIM DAILY EARNING FROM DASHBOARD
+    function claimDailyEarning() {
+      if(!state.currentUser.activePlans || state.currentUser.activePlans.length === 0) {
+        return showCustomAlert("No active investment packages found to claim earnings from.");
+      }
+
+      const todayStr = new Date().toDateString();
+      if(state.currentUser.lastClaimDate === todayStr) {
+        return showCustomAlert("You have already claimed your daily earning for today! Come back tomorrow.");
+      }
+
+      let dailySum = 0;
+      state.currentUser.activePlans.forEach(p => {
+        dailySum += (p.daily || 0);
+      });
+
+      if(dailySum <= 0) return showCustomAlert("No daily earning available right now.");
+
+      state.currentUser.walletBalance = (state.currentUser.walletBalance || 0) + dailySum;
+      state.currentUser.lastClaimDate = todayStr;
+
+      if(!state.currentUser.ledger) state.currentUser.ledger = [];
+      state.currentUser.ledger.unshift({
+        id: Date.now(),
+        type: 'CLAIM',
+        text: `Claimed Daily Profit: +PKR ${dailySum}`,
+        time: new Date().toLocaleString()
+      });
+
+      window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + state.currentUser.id), state.currentUser).then(() => {
+        localStorage.setItem('rc_user_v2', JSON.stringify(state.currentUser));
+        showCustomAlert(`Successfully claimed PKR ${dailySum}! Added to your wallet balance.`);
+        updateDashData();
+      });
+    }
+
+    function goBack() {
+      if(state.currentUser) {
+        navTo('pageDashboard', document.querySelectorAll('.nav-item')[0]);
+      } else {
+        showPage('pageAuth');
+      }
+    }
+
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      document.getElementById('universalBackBtn').style.display = (pageId === 'pageAuth') ? 'none' : 'block';
+    }
+
+    function navTo(pageId, el) {
+      showPage(pageId);
+      if(el) {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+      }
+    }
+
+    function togglePass(id, btn) {
+      const input = document.getElementById(id);
+      if(input.type === 'password') { input.type = 'text'; btn.innerText = 'Hide'; }
+      else { input.type = 'password'; btn.innerText = 'Show'; }
+    }
+
+    function toggleAuthMode() {
+      state.isAuthLogin = !state.isAuthLogin;
+      document.getElementById('authTitle').innerText = state.isAuthLogin ? "MEMBER LOGIN" : "CREATE ACCOUNT";
+      document.getElementById('signupFields').style.display = state.isAuthLogin ? "none" : "block";
+      document.getElementById('signupExtra').style.display = state.isAuthLogin ? "none" : "block";
+      document.getElementById('forgotBtn').style.display = state.isAuthLogin ? "block" : "none";
+      document.getElementById('authSubmitBtn').innerText = state.isAuthLogin ? "LOGIN ACCOUNT" : "CREATE ACCOUNT";
+      document.getElementById('authToggleBtn').innerText = state.isAuthLogin ? "Switch to Register" : "Switch to Login";
+    }
+
+    function handleAuth() {
+      const phone = document.getElementById('authPhone').value.trim();
+      const pass = document.getElementById('authPass').value.trim();
+
+      if(!phone || !pass) return showCustomAlert("Please fill all fields.");
+
+      if(state.isAuthLogin) {
+        const user = state.users.find(u => u.phone === phone && u.pass === pass);
+        if(!user) return showCustomAlert("Invalid credentials or account not found.");
+        if(user.banned) return showCustomAlert("Account has been suspended.");
+        state.currentUser = user;
+        localStorage.setItem('rc_user_v2', JSON.stringify(state.currentUser));
+        triggerFlowerAnimation();
+        openDashboard();
+      } else {
+        const name = document.getElementById('regName').value.trim();
+        const confirm = document.getElementById('regConfirmPass').value.trim();
+        let refCode = document.getElementById('regRefCode').value.trim();
+
+        if(!name || pass !== confirm) return showCustomAlert("Password confirmation mismatch.");
+        
+        const existing = state.users.find(u => u.phone === phone);
+        if(existing) return showCustomAlert("Phone number already registered.");
+
+        if(!refCode) refCode = "139722";
+        const generatedRefCode = "RC" + Math.floor(1000 + Math.random() * 9000);
+
+        const newUser = {
+          id: Date.now(),
+          name, phone, pass,
+          walletBalance: 0,
+          activePlans: [],
+          dailyEarn: 0,
+          totalEarn: 0,
+          refCode: generatedRefCode,
+          referredBy: refCode,
+          banned: false,
+          lastClaimDate: "",
+          ledger: [{ id: Date.now(), type: 'JOIN', text: 'Account created successfully (Balance PKR 0)', time: new Date().toLocaleString() }]
+        };
+
+        window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + newUser.id), newUser).then(() => {
+          state.currentUser = newUser;
+          localStorage.setItem('rc_user_v2', JSON.stringify(state.currentUser));
+          triggerFlowerAnimation();
+          openDashboard();
+        });
+      }
+    }
+
+    function openDashboard() {
+      showPage('pageDashboard');
+      document.getElementById('appNavBar').style.display = 'flex';
+      document.getElementById('userNameDisplay').innerText = `WELCOME, ${state.currentUser.name.toUpperCase()}`;
+      const userCode = state.currentUser.refCode || "139722";
+      const domain = window.location.origin + window.location.pathname;
+      document.getElementById('refLinkInput').value = `${domain}?ref=${userCode}`;
+      updateDashData();
+    }
+
+    function downloadAppAPK() {
+      window.open(state.apkLink, '_blank');
+    }
+
+    function updateDashData() {
+      document.getElementById('dashWalletBalance').innerText = `PKR ${state.currentUser.walletBalance || 0}`;
+      document.getElementById('dashDailyEarn').innerText = `PKR ${state.currentUser.dailyEarn || 0}`;
+      document.getElementById('dashTotalEarn').innerText = `PKR ${state.currentUser.totalEarn || 0}`;
+
+      let dailySum = 0;
+      const activeP = state.currentUser.activePlans || [];
+      activeP.forEach(p => dailySum += (p.daily || 0));
+      
+      document.getElementById('claimableAmt').innerText = dailySum;
+      const claimBtn = document.getElementById('claimDailyBtn');
+      const todayStr = new Date().toDateString();
+
+      if(activeP.length === 0) {
+        claimBtn.innerText = "⚡ NO ACTIVE PLAN TO CLAIM";
+        claimBtn.style.opacity = "0.5";
+        claimBtn.disabled = true;
+      } else if(state.currentUser.lastClaimDate === todayStr) {
+        claimBtn.innerText = "✅ ALREADY CLAIMED TODAY";
+        claimBtn.style.opacity = "0.6";
+        claimBtn.disabled = true;
+      } else {
+        claimBtn.innerText = `⚡ CLAIM TODAY'S EARNING (PKR ${dailySum})`;
+        claimBtn.style.opacity = "1";
+        claimBtn.disabled = false;
+      }
+
+      const plansCont = document.getElementById('activePlansContainer');
+      if(activeP.length === 0) {
+        plansCont.innerHTML = "No active package subscribed yet.";
+      } else {
+        plansCont.innerHTML = activeP.map(p => `
+          <div style="background:rgba(255,215,0,0.05); padding:10px 12px; border-radius:10px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(255,215,0,0.2);">
+            <div>
+              <b style="color:var(--gold-primary);">${p.title}</b>
+              <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
+                Daily: <b style="color:var(--accent-blue);">PKR ${p.daily}</b> | Total (60D): <b style="color:var(--accent-green);">PKR ${p.total}</b>
+              </div>
+            </div>
+            <span style="color:var(--gold-primary); font-size:11px; font-weight:700; background:rgba(255,215,0,0.1); padding:4px 8px; border-radius:6px;">Active</span>
+          </div>
+        `).join('');
+      }
+
+      const ledgerCont = document.getElementById('financialLedgerList');
+      const ledger = state.currentUser.ledger || [];
+      if(ledger.length === 0) {
+        ledgerCont.innerHTML = "No transactions or claims recorded yet.";
+      } else {
+        ledgerCont.innerHTML = ledger.map(l => `
+          <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; border-left:2px solid var(--gold-primary);">
+            <div style="color:#fff; font-weight:600;">${l.text}</div>
+            <div style="font-size:10px; color:var(--text-sub);">${l.time}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function openMenuModal() {
+      const adminFeed = document.getElementById('adminMenuFeed');
+      if(state.currentAdminRole) {
+        adminFeed.style.display = 'block';
+        renderAdminAlertsList();
+      } else {
+        adminFeed.style.display = 'none';
+      }
+      openModal('menuModal');
+    }
+
+    function openChangePassModal() {
+      document.getElementById('newPassInput').value = '';
+      openModal('changePassModal');
+    }
+
+    function submitChangePassword() {
+      const newPass = document.getElementById('newPassInput').value.trim();
+      if(!newPass) return showCustomAlert("Please enter a new password.");
+
+      state.currentUser.pass = newPass;
+      window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + state.currentUser.id), state.currentUser).then(() => {
+        localStorage.setItem('rc_user_v2', JSON.stringify(state.currentUser));
+        closeModal('changePassModal');
+        showCustomAlert("Password changed successfully!");
+      });
+    }
+
+    function switchAnotherAccount() {
+      logout();
+      showCustomAlert("Switching account: Please login or create another account.");
+    }
+
+    function logout() {
+      state.currentUser = null;
+      localStorage.removeItem('rc_user_v2');
+      document.getElementById('appNavBar').style.display = 'none';
+      showPage('pageAuth');
+    }
+
+    function renderPlans() {
+      const grid = document.getElementById('plansGrid');
+      grid.innerHTML = PLANS_DATA.map(p => `
+        <div class="gold-card" style="margin:0; background: linear-gradient(135deg, #101828 0%, #0B0F19 100%); border: 1px solid rgba(255,215,0,0.3);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+            <div>
+              <div style="font-family:'Cinzel'; font-size:16px; font-weight:700; color:var(--gold-primary);">${p.title}</div>
+              <div style="font-size:18px; font-weight:900; color:#fff; margin-top:2px;">PKR ${p.price}</div>
+            </div>
+            <button class="btn-gold" style="width:auto; padding:8px 14px; font-size:12px;" onclick="subscribePlan(${p.id})">SUBSCRIBE</button>
+          </div>
+          
+          <div style="font-size:12px; line-height:1.6; border-top:1px solid var(--card-border); padding-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+            <div><span style="color:var(--text-sub);">Daily:</span> <b style="color:var(--gold-primary);">PKR ${p.daily}</b></div>
+            <div><span style="color:var(--text-sub);">Duration:</span> <b style="color:#fff;">60 Days</b></div>
+            <div><span style="color:var(--text-sub);">Total Return:</span> <b style="color:var(--accent-green);">PKR ${p.total}</b></div>
+            <div><span style="color:var(--text-sub);">Ref Reward (20%):</span> <b style="color:var(--accent-blue);">PKR ${p.refReward}</b></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function subscribePlan(planId) {
+      if(!state.currentUser) return showCustomAlert("Log in to subscribe.");
+      const plan = PLANS_DATA.find(p => p.id === planId);
+      
+      if((state.currentUser.walletBalance || 0) < plan.price) {
+        return showCustomAlert(`Insufficient wallet balance! Please deposit at least PKR ${plan.price} and get it approved to buy this plan.`);
+      }
+
+      state.currentUser.walletBalance -= plan.price;
+      if(!state.currentUser.activePlans) state.currentUser.activePlans = [];
+      state.currentUser.activePlans.push(plan);
+      state.currentUser.dailyEarn = (state.currentUser.dailyEarn || 0) + plan.daily;
+      state.currentUser.totalEarn = (state.currentUser.totalEarn || 0) + plan.total;
+
+      if(!state.currentUser.ledger) state.currentUser.ledger = [];
+      state.currentUser.ledger.unshift({
+        id: Date.now(),
+        type: 'PLAN',
+        text: `Subscribed to ${plan.title} (-PKR ${plan.price})`,
+        time: new Date().toLocaleString()
+      });
+
+      window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + state.currentUser.id), state.currentUser).then(() => {
+        localStorage.setItem('rc_user_v2', JSON.stringify(state.currentUser));
+        showCustomAlert(`Successfully subscribed to ${plan.title}!`);
+        updateDashData();
+        navTo('pageDashboard', document.querySelectorAll('.nav-item')[0]);
+      });
+    }
+
+    function submitDeposit() {
+      const amount = parseFloat(document.getElementById('depAmount').value);
+      const wallet = document.getElementById('depWallet').value;
+      const fileInput = document.getElementById('depProof');
+
+      if(!amount || amount <= 0 || fileInput.files.length === 0) return showCustomAlert("Valid amount and transaction screenshot are mandatory.");
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const depId = Date.now();
+        const dep = {
+          id: depId,
+          userId: state.currentUser.id,
+          userName: state.currentUser.name,
+          wallet, amount,
+          proof: e.target.result,
+          status: 'pending'
+        };
+        window.dbSet(window.dbRef(window.db, 'regal_crest/deposits/' + depId), dep).then(() => {
+          showCustomAlert("Deposit submitted! Approval within 2 hours.");
+          switchDepositTab('history');
+        });
+      };
+      reader.readAsDataURL(fileInput.files[0]);
+    }
+
+    function switchDepositTab(tab) {
+      document.getElementById('depNewTab').style.display = tab === 'new' ? 'block' : 'none';
+      document.getElementById('depHistoryTab').style.display = tab === 'history' ? 'block' : 'none';
+      if(tab === 'history') renderDepHistory();
+    }
+
+    function renderDepHistory() {
+      const list = document.getElementById('depHistoryList');
+      const myDeps = state.deposits.filter(d => String(d.userId) === String(state.currentUser.id));
+      list.innerHTML = myDeps.length ? myDeps.map(d => `
+        <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div><b>PKR ${d.amount}</b> (${d.wallet})</div>
+            <div style="font-size:10px; color:var(--text-sub);">${new Date(d.id).toLocaleString()}</div>
+          </div>
+          <span class="badge-status status-${d.status}">${d.status.toUpperCase()}</span>
+        </div>
+      `).join('') : '<div style="font-size:12px;">No deposit history found.</div>';
+    }
+
+    function calcWithdrawFee() {
+      const amt = parseFloat(document.getElementById('wdAmount').value) || 0;
+      const fee = amt * 0.10;
+      const net = amt - fee;
+      document.getElementById('feeReq').innerText = `PKR ${amt}`;
+      document.getElementById('feeCut').innerText = `PKR ${fee}`;
+      document.getElementById('feeNet').innerText = `PKR ${net > 0 ? net : 0}`;
+    }
+
+    function submitWithdraw() {
+      const amt = parseFloat(document.getElementById('wdAmount').value);
+      const title = document.getElementById('wdTitle').value.trim();
+      const num = document.getElementById('wdNum').value.trim();
+      const wallet = document.getElementById('wdWallet').value;
+
+      if(!amt || amt < 200 || !title || !num) return showCustomAlert("Minimum withdrawal is PKR 200. Complete all fields.");
+      if((state.currentUser.walletBalance || 0) < amt) return showCustomAlert("Insufficient wallet balance for this withdrawal.");
+
+      const wdId = Date.now();
+      const wd = {
+        id: wdId,
+        userId: state.currentUser.id,
+        userName: state.currentUser.name,
+        wallet, amt, title, num,
+        status: 'pending'
+      };
+      window.dbSet(window.dbRef(window.db, 'regal_crest/withdrawals/' + wdId), wd).then(() => {
+        showCustomAlert("Withdrawal request submitted (24-48 hours processing).");
+        switchWithdrawTab('history');
+      });
+    }
+
+    function switchWithdrawTab(tab) {
+      document.getElementById('wdNewTab').style.display = tab === 'new' ? 'block' : 'none';
+      document.getElementById('wdHistoryTab').style.display = tab === 'history' ? 'block' : 'none';
+      if(tab === 'history') renderWdHistory();
+    }
+
+    function renderWdHistory() {
+      const list = document.getElementById('wdHistoryList');
+      const myWds = state.withdrawals.filter(w => String(w.userId) === String(state.currentUser.id));
+      list.innerHTML = myWds.length ? myWds.map(w => `
+        <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div><b>PKR ${w.amt}</b> (${w.wallet})</div>
+            <div style="font-size:10px; color:var(--text-sub);">${w.title} (${w.num})</div>
+          </div>
+          <span class="badge-status status-${w.status}">${w.status.toUpperCase()}</span>
+        </div>
+      `).join('') : '<div style="font-size:12px;">No withdrawal history found.</div>';
+    }
+
+    // STEALTH ADMIN
+    function handleLogoClick() {
+      state.logoClicks++;
+      if(state.logoClicks >= 3) {
+        state.logoClicks = 0;
+        openModal('adminAuthModal');
+      }
+    }
+
+    function verifyAdminPass() {
+      const pass = document.getElementById('adminPassInput').value.trim();
+      const credentials = {
+        'sara123': 'owner',
+        'maha123': 'admin1',
+        'kainat123': 'admin2',
+        'zaman123': 'admin3'
+      };
+
+      if(credentials[pass]) {
+        state.currentAdminRole = credentials[pass];
+        closeModal('adminAuthModal');
+        showPage('pageAdmin');
+        renderAdminStats();
+      } else {
+        showCustomAlert("Invalid security code.");
+      }
+    }
+
+    function toggleKillSwitch() {
+      const newStatus = !state.killSwitch;
+      window.dbSet(window.dbRef(window.db, 'regal_crest/killSwitch'), newStatus);
+    }
+
+    function renderAdminStats() {
+      document.getElementById('admUsersCount').innerText = state.users.length;
+      document.getElementById('admAllUsersCount').innerText = state.users.length;
+      document.getElementById('admDepCount').innerText = state.deposits.length;
+      const totDep = state.deposits.filter(d => d.status === 'success').reduce((a,b) => a + parseFloat(b.amount), 0);
+      const totWd = state.withdrawals.filter(w => w.status === 'success').reduce((a,b) => a + parseFloat(b.amt), 0);
+      
+      document.getElementById('admTotalDep').innerText = `PKR ${totDep}`;
+      document.getElementById('admTotalWd').innerText = `PKR ${totWd}`;
+
+      let profit = 0;
+      let roleTitle = "Admin Panel";
+      let profitLabel = "My Revenue / Profit:";
+
+      if(state.currentAdminRole === 'owner') {
+        roleTitle = "Owner Executive Panel (Sara)";
+        profit = totDep - totWd;
+        profitLabel = "Platform Net Reserve Profit:";
+      } else if(state.currentAdminRole === 'admin1') {
+        roleTitle = "Admin 1 Panel (Maha)";
+        profit = totDep * 0.05;
+        profitLabel = "Admin 1 Commission Share:";
+      } else if(state.currentAdminRole === 'admin2') {
+        roleTitle = "Admin 2 Panel (Kainat)";
+        profit = totDep * 0.05;
+        profitLabel = "Admin 2 Commission Share:";
+      } else if(state.currentAdminRole === 'admin3') {
+        roleTitle = "Admin 3 Panel (Zaman)";
+        profit = totDep * 0.05;
+        profitLabel = "Admin 3 Commission Share:";
+      }
+
+      document.getElementById('adminPanelTitle').innerText = roleTitle;
+      document.getElementById('adminProfitLabel').innerText = profitLabel;
+      document.getElementById('admProfitVal').innerText = `PKR ${profit.toFixed(0)}`;
+      document.getElementById('killSwitchBtn').innerText = state.killSwitch ? 'ON' : 'OFF';
+
+      // USER MANAGEMENT WITH USERNAME & DETAILED DEPOSIT / WITHDRAW STATUS
+      const uList = document.getElementById('adminUserList');
+      if(state.users.length === 0) {
+        uList.innerHTML = '<div style="font-size:12px; color:var(--text-sub);">No registered users found.</div>';
+      } else {
+        uList.innerHTML = state.users.map(u => {
+          const userDeps = state.deposits.filter(d => String(d.userId) === String(u.id));
+          const userWds = state.withdrawals.filter(w => String(w.userId) === String(u.id));
+
+          const lastDep = userDeps.length ? userDeps[userDeps.length - 1].status : 'none';
+          const lastWd = userWds.length ? userWds[userWds.length - 1].status : 'none';
+
+          return `
+            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; border:1px solid var(--card-border);">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                <div>
+                  <div style="font-weight:700; color:#fff; font-size:13px;">${u.name}</div>
+                  <div style="font-size:11px; color:var(--text-sub);">${u.phone}</div>
+                </div>
+                <div style="font-size:11px; font-weight:700; color:var(--gold-primary);">Wallet: PKR ${u.walletBalance || 0}</div>
+              </div>
+
+              <!-- DETAILED DEPOSIT & WITHDRAW STATUS TAGS -->
+              <div style="display:flex; gap:6px; margin-bottom:8px; font-size:10px;">
+                <span>Dep: <b class="badge-status status-${lastDep}">${lastDep.toUpperCase()}</b></span>
+                <span>Wd: <b class="badge-status status-${lastWd}">${lastWd.toUpperCase()}</b></span>
+              </div>
+
+              <div style="display:flex; gap:6px; justify-content:flex-end;">
+                <button class="btn-outline" style="margin:0; font-size:10px; padding:4px 8px;" onclick="toggleBan(${u.id})">${u.banned ? 'Unban User' : 'Ban User'}</button>
+                <button class="btn-outline" style="margin:0; font-size:10px; padding:4px 8px; border-color:red; color:red;" onclick="removeUser(${u.id})">Remove</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function toggleBan(userId) {
+      const u = state.users.find(x => x.id === userId);
+      if(u) {
+        u.banned = !u.banned;
+        window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + userId), u);
+      }
+    }
+
+    function removeUser(userId) {
+      window.dbRemove(window.dbRef(window.db, 'regal_crest/users/' + userId));
+    }
+
+    function openAdminFolder(type) {
+      openModal('folderModal');
+      const content = document.getElementById('folderContent');
+      const title = document.getElementById('folderTitle');
+
+      if(type === 'ep_dep' || type === 'jc_dep') {
+        const wallet = type === 'ep_dep' ? 'EasyPaisa' : 'JazzCash';
+        title.innerText = `📥 ${wallet} Deposit Requests`;
+        const filtered = state.deposits.filter(d => d.wallet === wallet);
+        content.innerHTML = filtered.length ? filtered.map(d => `
+          <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; border:1px solid rgba(255,215,0,0.2);">
+            <div style="display:flex; justify-content:space-between;">
+              <b>User: ${d.userName}</b>
+              <span class="badge-status status-${d.status}">${d.status.toUpperCase()}</span>
+            </div>
+            <div style="font-size:13px; font-weight:700; color:var(--gold-primary); margin:4px 0;">Amount: PKR ${d.amount}</div>
+            <button class="btn-outline" style="margin:4px 0; font-size:10px; padding:4px;" onclick="viewSlip('${d.proof}')">📷 View Transaction Slip</button>
+            <div style="display:flex; gap:6px; margin-top:6px;">
+              <button class="btn-gold" style="padding:6px; font-size:11px;" onclick="updateStatus('dep', ${d.id}, 'success')">Approve</button>
+              <button class="btn-outline" style="padding:6px; font-size:11px; border-color:red; color:red;" onclick="updateStatus('dep', ${d.id}, 'rejected')">Reject</button>
+            </div>
+          </div>
+        `).join('') : 'No deposit requests in this folder.';
+      } else {
+        const wallet = type === 'ep_wd' ? 'EasyPaisa' : 'JazzCash';
+        title.innerText = `📤 ${wallet} Withdrawal Requests`;
+        const filtered = state.withdrawals.filter(w => w.wallet === wallet);
+        content.innerHTML = filtered.length ? filtered.map(w => `
+          <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; border:1px solid rgba(255,215,0,0.2);">
+            <div style="display:flex; justify-content:space-between;">
+              <b>User: ${w.userName}</b>
+              <span class="badge-status status-${w.status}">${w.status.toUpperCase()}</span>
+            </div>
+            <div style="font-size:13px; font-weight:700; color:var(--accent-green); margin:4px 0;">Payout: PKR ${w.amt}</div>
+            <div style="font-size:11px; color:var(--text-sub);">Title: <b>${w.title}</b> | Mobile: <b>${w.num}</b></div>
+            <div style="display:flex; gap:6px; margin-top:6px;">
+              <button class="btn-gold" style="padding:6px; font-size:11px;" onclick="updateStatus('wd', ${w.id}, 'success')">Approve & Pay</button>
+              <button class="btn-outline" style="padding:6px; font-size:11px; border-color:red; color:red;" onclick="updateStatus('wd', ${w.id}, 'rejected')">Reject</button>
+            </div>
+          </div>
+        `).join('') : 'No withdrawal requests in this folder.';
+      }
+    }
+
+    function updateStatus(type, id, status) {
+      if(type === 'dep') {
+        const item = state.deposits.find(d => d.id === id);
+        if(item) {
+          item.status = status;
+          window.dbSet(window.dbRef(window.db, 'regal_crest/deposits/' + id), item);
+          if(status === 'success') {
+            const targetUser = state.users.find(u => String(u.id) === String(item.userId));
+            if(targetUser) {
+              targetUser.walletBalance = (targetUser.walletBalance || 0) + parseFloat(item.amount);
+              
+              if(!targetUser.ledger) targetUser.ledger = [];
+              targetUser.ledger.unshift({
+                id: Date.now(),
+                type: 'DEPOSIT',
+                text: `Deposit Approved: +PKR ${item.amount} (${item.wallet})`,
+                time: new Date().toLocaleString()
+              });
+
+              window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + targetUser.id), targetUser);
+              
+              if(targetUser.referredBy) {
+                const senior = state.users.find(u => String(u.refCode) === String(targetUser.referredBy) || String(u.id) === String(targetUser.referredBy));
+                if(senior && String(senior.id) !== String(targetUser.id)) {
+                  const refBonus = parseFloat(item.amount) * 0.20;
+                  senior.walletBalance = (senior.walletBalance || 0) + refBonus;
+                  
+                  if(!senior.ledger) senior.ledger = [];
+                  senior.ledger.unshift({
+                    id: Date.now(),
+                    type: 'REF',
+                    text: `Referral Bonus from ${targetUser.name}: +PKR ${refBonus}`,
+                    time: new Date().toLocaleString()
+                  });
+
+                  window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + senior.id), senior);
+                }
+              }
+            }
+          }
+        }
+      } else {
+        const item = state.withdrawals.find(w => w.id === id);
+        if(item) {
+          item.status = status;
+          window.dbSet(window.dbRef(window.db, 'regal_crest/withdrawals/' + id), item);
+          if(status === 'success') {
+            const targetUser = state.users.find(u => String(u.id) === String(item.userId));
+            if(targetUser) {
+              targetUser.walletBalance = Math.max(0, (targetUser.walletBalance || 0) - parseFloat(item.amt));
+              
+              if(!targetUser.ledger) targetUser.ledger = [];
+              targetUser.ledger.unshift({
+                id: Date.now(),
+                type: 'WITHDRAW',
+                text: `Withdrawal Paid: -PKR ${item.amt} (${item.wallet})`,
+                time: new Date().toLocaleString()
+              });
+
+              window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + targetUser.id), targetUser);
+            }
+          }
+        }
+      }
+      showCustomAlert("Status updated live!");
+      closeModal('folderModal');
+    }
+
+    function viewSlip(src) {
+      document.getElementById('slipImage').src = src;
+      openModal('slipModal');
+    }
+
+    function updateAdminLinks() {
+      const apkInput = document.getElementById('admApkLink').value.trim();
+      if(apkInput) {
+        state.apkLink = apkInput;
+        window.dbSet(window.dbRef(window.db, 'regal_crest/apkLink'), apkInput);
+      }
+      showCustomAlert("Public domain & APK download links published successfully!");
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    
+    function openChatModal() { 
+      openModal('chatModal');
+      renderChatMessages();
+    }
+
+    function switchChatTarget(target) {
+      state.activeChatTarget = target;
+      const names = { owner: 'Owner (Sara)', admin1: 'Admin (Maha)', admin2: 'Admin (Kainat)', admin3: 'Admin (Zaman)' };
+      document.getElementById('activeChatIndicator').innerText = `Chatting with: ${names[target]}`;
+      renderChatMessages();
+    }
+
+    function renderChatMessages() {
+      const container = document.getElementById('chatMessages');
+      const clearBtn = document.getElementById('clearChatBtn');
+      const headerTitle = document.getElementById('chatModalHeaderTitle');
+
+      if(!state.currentUser && !state.currentAdminRole) return;
+
+      let filteredChats = [];
+      if(state.currentAdminRole) {
+        filteredChats = state.chats.filter(c => c.target === state.currentAdminRole);
+        clearBtn.style.display = 'block';
+
+        const latestChat = filteredChats.slice().reverse().find(c => c.sender === 'user');
+        if(latestChat) {
+          const uObj = state.users.find(u => String(u.id) === String(latestChat.userId));
+          const uName = uObj ? uObj.name : latestChat.userName;
+          const uPhone = uObj ? uObj.phone : '';
+          headerTitle.innerHTML = `💬 ${uName} <span style="font-size:11px; color:var(--text-sub);">(${uPhone})</span>`;
+        } else {
+          headerTitle.innerText = `IN-APP SUPPORT (${state.currentAdminRole.toUpperCase()})`;
+        }
+      } else {
+        clearBtn.style.display = 'none';
+        headerTitle.innerText = `IN-APP EXECUTIVE SUPPORT`;
+        const myId = String(state.currentUser.id);
+        filteredChats = state.chats.filter(c => String(c.userId) === myId && c.target === state.activeChatTarget);
+      }
+
+      if(filteredChats.length === 0) {
+        container.innerHTML = `
+          <div style="background:var(--card-border); padding:8px 12px; border-radius:8px; max-width:80%; font-size:12px;">
+            <b>Support Team:</b> Welcome to Regal Crest Support. How may we assist your portfolio today?
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filteredChats.map(c => {
+        let isMe = false;
+        if(state.currentAdminRole) {
+          isMe = (c.sender === 'admin');
+        } else {
+          isMe = (c.sender === 'user');
+        }
+        const bg = isMe ? 'var(--gold-primary)' : 'rgba(255,215,0,0.1)';
+        const color = isMe ? '#000' : '#fff';
+        const align = isMe ? 'flex-end' : 'flex-start';
+        const senderLabel = state.currentAdminRole && !isMe ? `<div style="font-size:10px; color:var(--gold-primary); font-weight:700; margin-bottom:2px;">${c.userName}</div>` : '';
+
+        return `
+          <div style="background:${bg}; color:${color}; padding:8px 12px; border-radius:8px; align-self:${align}; max-width:80%; font-size:12px; border:1px solid rgba(255,215,0,0.2);">
+            ${senderLabel}
+            <div>${c.text}</div>
+            <div style="font-size:9px; opacity:0.7; margin-top:2px; text-align:right;">${new Date(c.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+          </div>
+        `;
+      }).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearCurrentChat() {
+      if(!state.currentAdminRole) return;
+      if(confirm("Are you sure you want to clear this entire chat history?")) {
+        const currentTarget = state.currentAdminRole;
+        const chatsToRemove = state.chats.filter(c => c.target === currentTarget);
+        
+        chatsToRemove.forEach(c => {
+          window.dbRemove(window.dbRef(window.db, 'regal_crest/chats/' + c.id));
+        });
+        showCustomAlert("Chat history cleared successfully.");
+      }
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if(!text) return;
+
+      const chatId = Date.now();
+      let chatMsg = {};
+
+      if(state.currentAdminRole) {
+        const targetUserChat = state.chats.slice().reverse().find(c => c.target === state.currentAdminRole);
+        if(!targetUserChat) return showCustomAlert("No active user conversation found to reply to.");
+        
+        chatMsg = {
+          id: chatId,
+          userId: targetUserChat.userId,
+          userName: "Admin",
+          target: state.currentAdminRole,
+          sender: 'admin',
+          text: text
+        };
+      } else {
+        chatMsg = {
+          id: chatId,
+          userId: state.currentUser.id,
+          userName: state.currentUser.name,
+          target: state.activeChatTarget,
+          sender: 'user',
+          text: text
+        };
+      }
+
+      window.dbSet(window.dbRef(window.db, 'regal_crest/chats/' + chatId), chatMsg).then(() => {
+        input.value = '';
+        renderChatMessages();
+      });
+    }
+
+    function copyRefLink() {
+      navigator.clipboard.writeText(document.getElementById('refLinkInput').value);
+      showCustomAlert("Referral link copied!");
+    }
+
+    function shareSocial(net) {
+      const linkVal = encodeURIComponent(document.getElementById('refLinkInput').value);
+      const msg = encodeURIComponent("Join Regal Crest Executive Investment Platform and start your high-yield portfolio today: ");
+      if(net === 'wa') window.open(`https://api.whatsapp.com/send?text=${msg}${linkVal}`);
+      if(net === 'tg') window.open(`https://t.me/share/url?url=${linkVal}&text=${msg}`);
+      if(net === 'fb') window.open(`https://www.facebook.com/sharer/sharer.php?u=${linkVal}`);
+    }
+  </script>
+</body>
+</html>
