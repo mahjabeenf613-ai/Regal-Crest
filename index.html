@@ -1,786 +1,596 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Regal Crest - Executive Suite</title>
-    
-    <link rel="manifest" href='data:application/manifest+json,{"name":"Regal Crest","short_name":"RegalCrest","start_url":"/","display":"standalone","background_color":"#0F251E","theme_color":"#D4AF37"}'>
-    <meta name="theme-color" content="#0F251E">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Regal Crest - Executive Investment Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0B0F19;
+      --card-bg: #101828;
+      --card-border: #1E293B;
+      --gold-primary: #FFD700;
+      --gold-gradient: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #FBF5B7 75%, #AA771C 100%);
+      --text-main: #F8FAFC;
+      --text-sub: #94A3B8;
+      --accent-red: #EF4444;
+      --accent-green: #10B981;
+      --accent-blue: #38BDF8;
+    }
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-    
-    <style>
-        :root {
-            --bg-dark: #071511;
-            --card-bg: #0F251E;
-            --gold: #D4AF37;
-            --gold-light: #F4E8B1;
-            --green: #10B981;
-            --cream: #F8FAFC;
-            --text-muted: #94A3B8;
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; user-select: none; }
+    body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; overflow-x: hidden; position: relative; }
 
-        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+    /* REALTIME TOP NOTIFICATION BANNER FOR ADMINS */
+    #adminTopAlertBanner {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: linear-gradient(90deg, #B91C1C 0%, #EF4444 100%);
+      color: #FFF;
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      z-index: 10000;
+      box-shadow: 0 4px 15px rgba(239,68,68,0.5);
+      align-items: center;
+      justify-content: space-between;
+      animation: slideDown 0.3s ease-out;
+    }
+    @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
 
-        html, body {
-            margin: 0; padding: 0; width: 100%; height: 100vh;
-            background-color: var(--bg-dark); font-family: 'Segoe UI', system-ui, sans-serif;
-            overflow: hidden; display: flex; justify-content: center; align-items: center;
-        }
+    .app-header {
+      background: rgba(16, 24, 40, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+      padding: 14px 18px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .crown-icon { font-size: 24px; filter: drop-shadow(0 0 8px rgba(255,215,0,0.4)); }
+    .brand-text { font-family: 'Cinzel', serif; font-weight: 700; font-size: 17px; background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .back-btn { background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); color: var(--gold-primary); padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
 
-        .app-frame {
-            width: 100%; max-width: 430px; height: 100vh;
-            background-color: var(--bg-dark); color: var(--cream);
-            display: flex; flex-direction: column; position: relative; overflow: hidden;
-        }
+    .page { display: none; padding: 16px; max-width: 480px; margin: 0 auto; padding-bottom: 90px; }
+    .page.active { display: block; }
 
-        @media (min-width: 431px) {
-            .app-frame { height: 92vh; border-radius: 20px; border: 2px solid var(--gold); box-shadow: 0 0 30px rgba(212,175,55,0.3); }
-        }
+    .gold-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px; padding: 20px; margin-bottom: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+      position: relative; overflow: hidden;
+    }
+    .gold-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--gold-gradient);
+    }
 
-        .view-container {
-            flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 70px;
-            -webkit-overflow-scrolling: touch;
-        }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 12px; color: var(--text-sub); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+    .input-wrapper { position: relative; }
+    .form-input {
+      width: 100%; background: rgba(11, 15, 25, 0.8); border: 1px solid var(--card-border);
+      color: #fff; padding: 12px 14px; border-radius: 10px; font-size: 14px; outline: none;
+    }
+    .form-input:focus { border-color: var(--gold-primary); }
+    .toggle-pass { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--gold-primary); font-weight: 700; font-size: 12px; cursor: pointer; }
 
-        .header {
-            text-align: center; padding: 10px 0; border-bottom: 2px solid var(--gold);
-            margin-bottom: 12px; background: rgba(212,175,55,0.05); border-radius: 10px;
-        }
-        .header h1 { margin: 0; color: var(--gold); font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; }
-        .header .subtitle { margin: 2px 0 0 0; font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
-        .launch-badge {
-            display: inline-block; background-color: var(--gold); color: var(--bg-dark);
-            font-size: 9px; padding: 2px 10px; border-radius: 10px; margin-top: 4px; font-weight: 800;
-        }
+    .btn-gold {
+      width: 100%; background: var(--gold-gradient); color: #000; font-weight: 800; font-size: 14px;
+      padding: 14px; border: none; border-radius: 10px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .btn-outline {
+      width: 100%; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-primary);
+      font-weight: 700; font-size: 13px; padding: 12px; border-radius: 10px; cursor: pointer; margin-top: 10px;
+    }
 
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 11px; color: var(--gold); margin-bottom: 4px; font-weight: 700; }
-        input, select {
-            width: 100%; padding: 12px; border: 1.5px solid var(--gold);
-            border-radius: 8px; background-color: #0A1E18; color: #FFF; font-size: 13px; outline: none;
-        }
+    .nav-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: rgba(16, 24, 40, 0.95);
+      backdrop-filter: blur(16px); border-top: 1px solid rgba(255, 215, 0, 0.15);
+      display: flex; justify-content: space-around; padding: 10px 0; z-index: 99; max-width: 480px; margin: 0 auto;
+    }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-sub); font-size: 11px; font-weight: 600; cursor: pointer; }
+    .nav-item.active { color: var(--gold-primary); }
+    .nav-icon { font-size: 18px; }
 
-        .btn {
-            width: 100%; padding: 12px; background: linear-gradient(135deg, var(--gold), #AA7C11);
-            color: var(--bg-dark); border: none; border-radius: 8px; font-weight: 800; font-size: 13px;
-            cursor: pointer; margin-top: 6px; text-transform: uppercase; text-align: center;
-        }
-        .btn-green { background: linear-gradient(135deg, var(--green), #047857); color: #FFF; }
-        .btn-outline { background: transparent; border: 1.5px solid var(--gold); color: var(--gold); }
-        .btn-danger { background: #DC2626; color: #FFF; padding: 4px 8px; font-size: 10px; border-radius: 4px; border: none; cursor: pointer; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 200; justify-content: center; align-items: center; padding: 20px; }
+    .modal.active { display: flex; }
+    .modal-box { background: var(--card-bg); border: 1px solid var(--gold-primary); width: 100%; max-width: 420px; border-radius: 18px; padding: 22px; position: relative; max-height: 85vh; overflow-y: auto; }
 
-        .switch-link { text-align: center; font-size: 12px; margin-top: 12px; color: var(--text-muted); }
-        .switch-link span { color: var(--gold); font-weight: bold; cursor: pointer; text-decoration: underline; }
-
-        .balance-box {
-            background: linear-gradient(135deg, #0A1E18, var(--card-bg)); color: #FFF;
-            padding: 16px; border-radius: 12px; text-align: center; margin-bottom: 12px; border: 1.5px solid var(--gold);
-        }
-        .balance-box h3 { margin: 0; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-        .balance-box h1 { margin: 6px 0 0 0; font-size: 24px; color: var(--gold); font-weight: 900; }
-
-        .dash-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-        .stat-card { background: var(--card-bg); border: 1px solid rgba(212,175,55,0.3); padding: 10px; border-radius: 10px; text-align: center; }
-        .stat-card h4 { margin: 0; font-size: 9px; color: var(--text-muted); text-transform: uppercase; }
-        .stat-card p { margin: 4px 0 0 0; font-size: 13px; font-weight: 800; color: var(--gold); }
-
-        .referral-card {
-            background: var(--card-bg); border: 1.5px dashed var(--gold); padding: 12px; border-radius: 10px; margin-bottom: 12px; text-align: center;
-        }
-
-        .plans-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; }
-        .plan-card { background: var(--card-bg); border: 1.5px solid var(--gold); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .plan-info h3 { margin: 0; font-size: 13px; color: var(--gold); }
-        .plan-info p { margin: 3px 0 0 0; font-size: 10px; color: var(--text-muted); }
-
-        .nav-bar {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 60px;
-            background: #071511; border-top: 1px solid rgba(212,175,55,0.3);
-            display: flex; justify-content: space-around; align-items: center; z-index: 100;
-        }
-        .nav-item { text-align: center; color: var(--text-muted); font-size: 10px; cursor: pointer; font-weight: 600; text-transform: uppercase; }
-        .nav-item.active { color: var(--gold); }
-
-        .toast {
-            position: absolute; bottom: 75px; left: 50%; transform: translateX(-50%);
-            background: var(--card-bg); color: var(--gold); padding: 10px 20px; border-radius: 20px;
-            font-size: 11px; border: 1.5px solid var(--gold); z-index: 9999; display: none; text-align: center; width: 85%; font-weight: 700;
-        }
-
-        /* Modal Slip Popup */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 10000; display: none;
-            justify-content: center; align-items: center; padding: 20px;
-        }
-        .modal-content {
-            background: var(--card-bg); border: 2px solid var(--gold); border-radius: 12px;
-            padding: 20px; width: 100%; max-width: 350px; text-align: center; color: var(--cream);
-        }
-
-        .admin-section { background: var(--card-bg); border: 1.5px solid var(--gold); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
-        .admin-section h3 { margin: 0 0 8px 0; font-size: 11px; color: var(--gold); border-bottom: 1px solid rgba(212,175,55,0.3); padding-bottom: 4px; text-transform: uppercase; }
-        .hidden { display: none !important; }
-    </style>
+    .kill-screen { display: none; position: fixed; inset: 0; background: #050505; color: #EF4444; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+    .kill-screen.active { display: flex; }
+  </style>
 </head>
 <body>
 
-    <div class="app-frame">
-        <div id="toastBox" class="toast"></div>
+  <!-- ADMIN SECRET TOP LIVE ALERT BANNER -->
+  <div id="adminTopAlertBanner">
+    <span id="adminTopAlertText">🚨 NEW ACTIVITY ALERT</span>
+    <button onclick="dismissTopAlert()" style="background:none; border:none; color:#fff; font-weight:800; cursor:pointer;">✕</button>
+  </div>
 
-        <!-- SLIP POPUP MODAL -->
-        <div id="slipModal" class="modal-overlay">
-            <div class="modal-content">
-                <h3 style="color:var(--gold); margin-top:0;">Payment Slip Verification</h3>
-                <div id="slipDetails" style="font-size:12px; margin:15px 0; text-align:left; line-height:1.6;"></div>
-                <button class="btn" onclick="closeSlipModal()">Close Slip</button>
-            </div>
+  <div id="killScreen" class="kill-screen">
+    <h1 style="font-family:'Cinzel'; font-size:32px; margin-bottom:12px;">SYSTEM OFFLINE</h1>
+    <p style="color:#94A3B8; font-size:14px; max-width:320px;">Regal Crest services are currently under scheduled nationwide emergency maintenance.</p>
+  </div>
+
+  <header class="app-header">
+    <div class="brand" onclick="handleLogoClick()">
+      <span class="crown-icon">👑</span>
+      <div>
+        <div class="brand-text">REGAL CREST</div>
+        <div style="font-size: 9px; color: var(--gold-primary); letter-spacing: 1px;">EXECUTIVE SUITE</div>
+      </div>
+    </div>
+    <div id="headerActions" style="display:flex; gap:8px;">
+      <button class="back-btn" id="universalBackBtn" onclick="goBack()" style="display:none;">← Back</button>
+      <button class="back-btn" onclick="openChatModal()">💬 Support</button>
+    </div>
+  </header>
+
+  <!-- AUTH PAGE -->
+  <div id="pageAuth" class="page active">
+    <div class="gold-card" style="margin-top: 20px;">
+      <h2 id="authTitle" style="font-family:'Cinzel'; color:var(--gold-primary); text-align:center; margin-bottom: 20px;">CREATE ACCOUNT</h2>
+      
+      <div id="signupFields">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="regName" class="form-input" placeholder="Enter your full name">
         </div>
+      </div>
 
-        <div class="view-container" id="mainViewContainer">
+      <div class="form-group">
+        <label class="form-label">Mobile Number</label>
+        <input type="tel" id="authPhone" class="form-input" placeholder="03XXXXXXXXX">
+      </div>
 
-            <!-- SIGN UP VIEW -->
-            <div id="signupView" class="hidden">
-                <div class="header" onclick="unlockAdmin()">
-                    <h1>Regal Crest</h1>
-                    <div class="subtitle">Executive Suite</div>
-                    <div class="launch-badge">Launch Date: 11 November 2026</div>
-                </div>
-
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="suName" placeholder="Enter your full name">
-                </div>
-                <div class="form-group">
-                    <label>Mobile Number</label>
-                    <input type="tel" id="suMobile" placeholder="03001234567">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="suPassword" placeholder="Enter password">
-                </div>
-                <div class="form-group">
-                    <label>Referral Code (Optional)</label>
-                    <input type="text" id="suRefCode" placeholder="6-digit code">
-                </div>
-
-                <button class="btn" onclick="handleSignUp()">Create Account</button>
-                
-                <div class="switch-link">
-                    Already registered? <span onclick="showView('loginView')">Login Here</span>
-                </div>
-            </div>
-
-            <!-- LOGIN VIEW -->
-            <div id="loginView" class="hidden">
-                <div class="header" onclick="unlockAdmin()">
-                    <h1>Regal Crest</h1>
-                    <div class="subtitle">Executive Suite</div>
-                    <div class="launch-badge">Launch Date: 11 November 2026</div>
-                </div>
-
-                <div class="form-group">
-                    <label>Mobile Number</label>
-                    <input type="tel" id="logMobile" placeholder="03001234567">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="logPassword" placeholder="Enter password">
-                </div>
-
-                <button class="btn" onclick="handleLogin()">Login Account</button>
-                
-                <div class="switch-link">
-                    Don't have an account? <span onclick="showView('signupView')">Register Here</span>
-                </div>
-            </div>
-
-            <!-- ADMIN LOGIN VIEW -->
-            <div id="adminLoginView" class="hidden">
-                <div class="header">
-                    <h1>Admin Portal</h1>
-                    <div class="subtitle">Management Control</div>
-                </div>
-                <div class="form-group">
-                    <label>Passcode (Owner: sara123)</label>
-                    <input type="password" id="adminPass" placeholder="Enter passcode">
-                </div>
-                <button class="btn" onclick="handleAdminLogin()">Authorize Admin</button>
-                <button class="btn btn-outline" style="margin-top:6px;" onclick="showView('loginView')">Back</button>
-            </div>
-
-            <!-- DASHBOARD VIEW -->
-            <div id="dashboardView" class="hidden">
-                <div class="header">
-                    <h1 id="dashGreeting">Welcome, Investor</h1>
-                    <div class="subtitle">Regal Crest Executive Suite</div>
-                    <div class="launch-badge">Launch Date: 11 November 2026</div>
-                </div>
-
-                <div class="balance-box">
-                    <h3>Available Wallet Balance</h3>
-                    <h1 id="userBalance">PKR 0.00</h1>
-                </div>
-
-                <button class="btn btn-green" style="margin-bottom: 12px;" onclick="claimEarnings()">⚡ Claim Today's Earning (PKR 70)</button>
-
-                <div class="dash-stats">
-                    <div class="stat-card">
-                        <h4>Daily Earning</h4>
-                        <p id="statDaily">PKR 70</p>
-                    </div>
-                    <div class="stat-card">
-                        <h4>Total Earning</h4>
-                        <p id="statTotal">PKR 4,200</p>
-                    </div>
-                </div>
-
-                <div class="referral-card">
-                    <div style="font-size:10px; font-weight:bold; color:var(--gold);">🎁 Referral Link (20% Invite Reward):</div>
-                    <div id="refLinkText" style="font-size:9px; color:var(--cream); word-break:break-all; margin:4px 0;">...</div>
-                    <button class="btn btn-outline" style="padding:4px; font-size:9px;" onclick="copyRefLink()">📋 Copy Link</button>
-                </div>
-
-                <div style="font-size:11px; font-weight:bold; color:var(--gold); margin-bottom:6px;">Active Investment Package</div>
-                <div class="plans-grid">
-                    <div class="plan-card">
-                        <div class="plan-info">
-                            <h3 id="activePkgName">Tier II - Bronze Executive</h3>
-                            <p id="activePkgDetails">Daily: PKR 70 | Total (60D): PKR 4,200</p>
-                        </div>
-                        <div style="background:var(--green); color:#fff; font-size:9px; font-weight:800; padding:3px 8px; border-radius:4px;">Active</div>
-                    </div>
-                </div>
-
-                <button class="btn" style="background:#8B0000; margin-top:10px;" onclick="handleLogout()">Logout Account</button>
-            </div>
-
-            <!-- DEPOSIT VIEW -->
-            <div id="depositView" class="hidden">
-                <div class="header">
-                    <h1>Deposit Funds</h1>
-                    <div class="subtitle">Official Account: 03416711193</div>
-                </div>
-                <div class="form-group">
-                    <label>Select Wallet</label>
-                    <select id="depWallet"><option>Easypaisa</option><option>JazzCash</option></select>
-                </div>
-                <div class="form-group">
-                    <label>Amount (PKR)</label>
-                    <input type="number" id="depAmount" placeholder="Enter amount (e.g. 500)">
-                </div>
-                <div class="form-group">
-                    <label>Transaction ID / Reference Number</label>
-                    <input type="text" id="depTrx" placeholder="Enter Trx ID">
-                </div>
-                <button class="btn" onclick="submitDeposit()">Submit Deposit Request</button>
-            </div>
-
-            <!-- WITHDRAW VIEW -->
-            <div id="withdrawView" class="hidden">
-                <div class="header">
-                    <h1>Withdraw Funds</h1>
-                    <div class="subtitle">10% Tax Applicable</div>
-                </div>
-                <div class="form-group">
-                    <label>Withdrawal Amount (PKR)</label>
-                    <input type="number" id="withAmount" placeholder="Enter amount">
-                </div>
-                <div class="form-group">
-                    <label>Account Number</label>
-                    <input type="tel" id="withAccount" placeholder="03001234567">
-                </div>
-                <button class="btn" onclick="submitWithdraw()">Submit Withdrawal</button>
-            </div>
-
-            <!-- MENU VIEW -->
-            <div id="menuView" class="hidden">
-                <div class="header">
-                    <h1>Executive Menu</h1>
-                    <div class="subtitle">Options & Settings</div>
-                </div>
-                <button class="btn btn-outline" style="margin-bottom:8px;" onclick="showToast('Customer Support: Telegram @RegalCrestSupport')">💬 Support Helpline</button>
-                <button class="btn" style="background:#8B0000;" onclick="handleLogout()">Logout Account</button>
-            </div>
-
-            <!-- ADMIN PANEL VIEW -->
-            <div id="adminPanelView" class="hidden">
-                <div class="header">
-                    <h1>Admin Control Panel</h1>
-                    <div class="subtitle">Cloud Firebase Real-Time Sync</div>
-                </div>
-
-                <div class="admin-section">
-                    <h3>👥 Cloud Users & Custom Balance Edit</h3>
-                    <div id="adminUserList" style="max-height:150px; overflow-y:auto; font-size:10px;"></div>
-                </div>
-
-                <div class="admin-section">
-                    <h3>📥 Deposit Requests & Status</h3>
-                    <div id="adminDepositList" style="max-height:140px; overflow-y:auto; font-size:10px;"></div>
-                </div>
-
-                <div class="admin-section">
-                    <h3>📤 Withdrawal Requests & Status</h3>
-                    <div id="adminWithdrawList" style="max-height:140px; overflow-y:auto; font-size:10px;"></div>
-                </div>
-
-                <button class="btn btn-outline" onclick="showView('dashboardView')">Back to Dashboard</button>
-            </div>
-
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-wrapper">
+          <input type="password" id="authPass" class="form-input" placeholder="••••••••">
+          <span class="toggle-pass" onclick="togglePass('authPass', this)">Show</span>
         </div>
+      </div>
 
-        <!-- NAVIGATION BAR -->
-        <div class="nav-bar" id="bottomNavBar" style="display:none;">
-            <div class="nav-item active" onclick="switchNav('dashboardView', this)">Home</div>
-            <div class="nav-item" onclick="switchNav('depositView', this)">Deposit</div>
-            <div class="nav-item" onclick="switchNav('withdrawView', this)">Withdraw</div>
-            <div class="nav-item" onclick="switchNav('menuView', this)">Menu</div>
+      <div id="signupExtra">
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <div class="input-wrapper">
+            <input type="password" id="regConfirmPass" class="form-input" placeholder="••••••••">
+            <span class="toggle-pass" onclick="togglePass('regConfirmPass', this)">Show</span>
+          </div>
         </div>
+        <div class="form-group">
+          <label class="form-label">Referral Code</label>
+          <input type="text" id="regRefCode" class="form-input" value="139722" placeholder="Enter referral code">
+        </div>
+      </div>
+
+      <button class="btn-gold" id="authSubmitBtn" onclick="handleAuth()">CREATE ACCOUNT</button>
+      <button class="btn-outline" id="authToggleBtn" onclick="toggleAuthMode()">Switch to Login</button>
+      <div id="forgotBtn" style="text-align:center; margin-top:14px; font-size:12px; color:var(--gold-primary); cursor:pointer; display:none;" onclick="showCustomAlert('Please contact Support to reset your password.')">Forgot Password?</div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="pageDashboard" class="page">
+    <div class="gold-card" style="text-align:center; background: linear-gradient(180deg, #101828 0%, #0B0F19 100%);">
+      <div style="font-size:11px; color:var(--gold-primary); letter-spacing:1px; margin-bottom:4px;">LAUNCH DATE: 11 NOVEMBER 2026</div>
+      <h3 style="font-family:'Cinzel'; font-size:22px; color:#fff;" id="userNameDisplay">Welcome, Member</h3>
+      
+      <button class="btn-gold" style="margin-top:14px; padding:10px; font-size:13px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="downloadAppAPK()">
+        <span>📱</span> Download Executive App (APK)
+      </button>
+
+      <div style="margin-top:14px; background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.3); padding:10px; border-radius:10px;">
+        <div style="font-size:11px; color:var(--text-sub);">AVAILABLE WALLET BALANCE</div>
+        <div style="font-size:20px; font-weight:800; color:var(--gold-primary);" id="dashWalletBalance">PKR 0</div>
+      </div>
+
+      <div style="margin-top:12px;" id="claimSection">
+        <button class="btn-gold" id="claimDailyBtn" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color:#fff; font-size:13px; padding:12px;" onclick="claimDailyEarning()">
+          ⚡ CLAIM TODAY'S EARNING (PKR <span id="claimableAmt">0</span>)
+        </button>
+      </div>
+
+      <div style="margin-top:12px; display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <div style="background:rgba(255,215,0,0.05); border:1px solid rgba(255,215,0,0.2); padding:12px; border-radius:12px;">
+          <div style="font-size:11px; color:var(--text-sub);">DAILY EARNING</div>
+          <div style="font-size:18px; font-weight:800; color:var(--gold-primary);" id="dashDailyEarn">PKR 0</div>
+        </div>
+        <div style="background:rgba(255,215,0,0.05); border:1px solid rgba(255,215,0,0.2); padding:12px; border-radius:12px;">
+          <div style="font-size:11px; color:var(--text-sub);">TOTAL EARNING</div>
+          <div style="font-size:18px; font-weight:800; color:var(--accent-green);" id="dashTotalEarn">PKR 0</div>
+        </div>
+      </div>
     </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCyIrYXLp35o1ZQ8LC5...",
-            authDomain: "orion-capital-99199.firebaseapp.com",
-            projectId: "orion-capital-99199",
-            storageBucket: "orion-capital-99199.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:12345678:web:abcdef"
-        };
+    <div class="gold-card">
+      <div style="font-size:12px; font-weight:700; color:var(--gold-primary); margin-bottom:8px;">MY ACTIVE INVESTMENT PACKAGES</div>
+      <div id="activePlansContainer" style="font-size:13px; color:var(--text-sub);">No active package subscribed yet.</div>
+    </div>
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.firestore();
+    <div class="gold-card">
+      <div style="font-size:12px; font-weight:700; color:var(--gold-primary); margin-bottom:8px;">REFERRAL & INVITE LINK (20% REWARD)</div>
+      <div style="margin-bottom:10px;">
+        <input type="text" id="refLinkInput" class="form-input" readonly value="https://regalcrest.app/ref=139722" style="font-size:12px; background:rgba(0,0,0,0.5);">
+      </div>
+      <button class="btn-gold" style="padding:14px; font-size:14px; margin-bottom:12px;" onclick="copyRefLink()">📋 COPY REFERRAL LINK</button>
+    </div>
+  </div>
 
-        let tapCount = 0;
-        let cachedUsers = [];
-        let cachedDeposits = [];
-        let cachedWithdraws = [];
+  <!-- PLANS -->
+  <div id="pagePlans" class="page">
+    <h3 style="font-family:'Cinzel'; color:var(--gold-primary); margin-bottom:14px;">EXECUTIVE INVESTMENT TIERS</h3>
+    <div id="plansGrid" style="display:grid; gap:12px;"></div>
+  </div>
 
-        window.addEventListener('DOMContentLoaded', () => {
-            initFirebaseListeners();
-            const savedUser = localStorage.getItem('regal_user_mobile');
-            if (savedUser) {
-                showView('dashboardView');
-                document.getElementById('bottomNavBar').style.display = 'flex';
-            } else {
-                showView('signupView');
+  <!-- DEPOSIT -->
+  <div id="pageDeposit" class="page">
+    <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+      <button class="btn-outline" style="margin:0; width:48%;" onclick="switchDepositTab('new')">New Deposit</button>
+      <button class="btn-outline" style="margin:0; width:48%;" onclick="switchDepositTab('history')">Deposit History</button>
+    </div>
+
+    <div id="depNewTab">
+      <div class="gold-card">
+        <div style="font-size:12px; color:var(--text-sub); margin-bottom:6px;">OFFICIAL PAYMENT ACCOUNT</div>
+        <div style="font-size:18px; font-weight:800; color:var(--gold-primary); margin-bottom:4px;">03416711193</div>
+        <div style="font-size:12px; color:#fff; margin-bottom:10px;">Title: EasyPaisa / JazzCash Receiver</div>
+        <button class="btn-outline" style="margin:0; padding:6px; font-size:11px;" onclick="navigator.clipboard.writeText('03416711193'); showCustomAlert('Account number copied!');">Copy Account Number</button>
+        <div style="font-size:11px; color:var(--accent-green); margin-top:10px;">⚡ Approval Time: Within 2 Hours</div>
+      </div>
+
+      <div class="gold-card">
+        <div class="form-group">
+          <label class="form-label">Select Wallet</label>
+          <select id="depWallet" class="form-input">
+            <option value="EasyPaisa">EasyPaisa</option>
+            <option value="JazzCash">JazzCash</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deposit Amount (PKR)</label>
+          <input type="number" id="depAmount" class="form-input" placeholder="Enter amount">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Transaction Screenshot (Mandatory)</label>
+          <input type="file" id="depProof" class="form-input" accept="image/*">
+        </div>
+        <button class="btn-gold" onclick="submitDeposit()">SUBMIT DEPOSIT</button>
+      </div>
+    </div>
+
+    <div id="depHistoryTab" style="display:none;">
+      <div class="gold-card">
+        <div style="font-size:13px; font-weight:700; color:var(--gold-primary); margin-bottom:10px;">MY DEPOSIT HISTORY</div>
+        <div id="depHistoryList" style="display:grid; gap:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WITHDRAW -->
+  <div id="pageWithdraw" class="page">
+    <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+      <button class="btn-outline" style="margin:0; width:48%;" onclick="switchWithdrawTab('new')">New Withdrawal</button>
+      <button class="btn-outline" style="margin:0; width:48%;" onclick="switchWithdrawTab('history')">Withdraw History</button>
+    </div>
+
+    <div id="wdNewTab">
+      <div class="gold-card">
+        <div style="font-size:11px; color:var(--text-sub);">MINIMUM WITHDRAWAL: PKR 200</div>
+        <div style="font-size:11px; color:var(--gold-primary); margin-top:2px;">PROCESSING TIME: 24 - 48 HOURS (10% FEE)</div>
+      </div>
+
+      <div class="gold-card">
+        <div class="form-group">
+          <label class="form-label">Select Wallet</label>
+          <select id="wdWallet" class="form-input">
+            <option value="EasyPaisa">EasyPaisa</option>
+            <option value="JazzCash">JazzCash</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Holder Name</label>
+          <input type="text" id="wdTitle" class="form-input" placeholder="Account Title">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Mobile Number</label>
+          <input type="tel" id="wdNum" class="form-input" placeholder="03XXXXXXXXX">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount (PKR)</label>
+          <input type="number" id="wdAmount" class="form-input" placeholder="Min PKR 200">
+        </div>
+        <button class="btn-gold" onclick="submitWithdraw()">REQUEST WITHDRAWAL</button>
+      </div>
+    </div>
+
+    <div id="wdHistoryTab" style="display:none;">
+      <div class="gold-card">
+        <div style="font-size:13px; font-weight:700; color:var(--gold-primary); margin-bottom:10px;">WITHDRAWAL HISTORY</div>
+        <div id="wdHistoryList" style="display:grid; gap:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="pageAdmin" class="page">
+    <div class="gold-card" style="border-color:var(--accent-red);">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:14px; font-weight:800; color:var(--accent-red);">EMERGENCY KILL SWITCH</div>
+          <div style="font-size:11px; color:var(--text-sub);">Lock app access nationwide</div>
+        </div>
+        <button class="btn-gold" id="killSwitchBtn" style="width:auto; padding:8px 16px; background:var(--accent-red); color:#fff;" onclick="toggleKillSwitch()">OFF</button>
+      </div>
+    </div>
+
+    <div class="gold-card">
+      <div style="font-size:12px; color:var(--gold-primary); font-weight:700; margin-bottom:8px;" id="adminPanelTitle">PLATFORM STATS</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px; margin-bottom:10px;">
+        <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px;">Total Users: <b id="admUsersCount">0</b></div>
+        <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px;">Depositors: <b id="admDepCount">0</b></div>
+        <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px;">Total Dep: <b id="admTotalDep">PKR 0</b></div>
+        <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px;">Total Wd: <b id="admTotalWd">PKR 0</b></div>
+      </div>
+    </div>
+
+    <!-- SEPARATE REQUEST FOLDERS -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+      <button class="btn-outline" style="margin:0; font-size:11px;" onclick="openAdminFolder('ep_dep')">EasyPaisa Dep Requests</button>
+      <button class="btn-outline" style="margin:0; font-size:11px;" onclick="openAdminFolder('jc_dep')">JazzCash Dep Requests</button>
+      <button class="btn-outline" style="margin:0; font-size:11px;" onclick="openAdminFolder('ep_wd')">EasyPaisa Wd Requests</button>
+      <button class="btn-outline" style="margin:0; font-size:11px;" onclick="openAdminFolder('jc_wd')">JazzCash Wd Requests</button>
+    </div>
+
+    <!-- USER MANAGEMENT WITH REAL PASSWORDS & EDITABLE BALANCE -->
+    <div class="gold-card">
+      <div style="font-size:12px; color:var(--gold-primary); font-weight:700; margin-bottom:8px;">USER MANAGEMENT, PASSWORDS & BALANCE EDIT</div>
+      <div id="adminUserList" style="display:grid; gap:8px;"></div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION BAR -->
+  <nav class="nav-bar" id="appNavBar" style="display:none;">
+    <div class="nav-item active" onclick="navTo('pageDashboard', this)"><span class="nav-icon">🏛️</span>Home</div>
+    <div class="nav-item" onclick="navTo('pagePlans', this)"><span class="nav-icon">💎</span>Plans</div>
+    <div class="nav-item" onclick="navTo('pageDeposit', this)"><span class="nav-icon">📥</span>Deposit</div>
+    <div class="nav-item" onclick="navTo('pageWithdraw', this)"><span class="nav-icon">📤</span>Withdraw</div>
+    <div class="nav-item" onclick="openMenuModal()"><span class="nav-icon">☰</span>Menu</div>
+  </nav>
+
+  <!-- LUXURY MENU MODAL -->
+  <div id="menuModal" class="modal">
+    <div class="modal-box" style="text-align:center;">
+      <h3 style="font-family:'Cinzel'; color:var(--gold-primary); margin-bottom:16px;">EXECUTIVE MENU</h3>
+      <div style="display:grid; gap:10px;">
+        <button class="btn-gold" style="margin-top:6px; background:var(--accent-red); color:#fff;" onclick="closeModal('menuModal'); logout()">🚪 Logout</button>
+      </div>
+      <button class="btn-outline" style="margin-top:14px; border-color:var(--text-sub); color:var(--text-sub);" onclick="closeModal('menuModal')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- CUSTOM ALERT MODAL -->
+  <div id="customAlertModal" class="modal">
+    <div class="modal-box" style="text-align:center;">
+      <div style="font-size:32px; margin-bottom:8px;">👑</div>
+      <div style="font-family:'Cinzel'; color:var(--gold-primary); font-weight:700; font-size:16px; margin-bottom:8px;">REGAL CREST</div>
+      <div id="customAlertText" style="font-size:13px; color:#fff; margin-bottom:18px; line-height:1.4;"></div>
+      <button class="btn-gold" onclick="closeModal('customAlertModal')">OK</button>
+    </div>
+  </div>
+
+  <!-- ADMIN STEALTH PASSCODE AUTH MODAL -->
+  <div id="adminAuthModal" class="modal">
+    <div class="modal-box">
+      <h3 style="font-family:'Cinzel'; color:var(--gold-primary); text-align:center; margin-bottom:14px;">STEALTH ADMIN AUTH</h3>
+      <div class="form-group">
+        <label class="form-label">Security Access Passcode</label>
+        <!-- NO DOTS / NO MASKING IN INPUT AS REQUESTED -->
+        <input type="text" id="adminPassInput" class="form-input" style="-webkit-text-security: none; color:#fff;" placeholder="Enter fixed passcode">
+      </div>
+      <button class="btn-gold" onclick="verifyAdminPass()">AUTHENTICATE</button>
+      <button class="btn-outline" onclick="closeModal('adminAuthModal')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- SUPPORT CHAT MODAL -->
+  <div id="chatModal" class="modal">
+    <div class="modal-box" style="height:88vh; display:flex; flex-direction:column;">
+      <div style="font-family:'Cinzel'; color:var(--gold-primary); font-weight:700; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span id="chatModalHeaderTitle">IN-APP EXECUTIVE SUPPORT</span>
+        <span style="cursor:pointer;" onclick="closeModal('chatModal')">✕</span>
+      </div>
+
+      <div style="display:flex; gap:4px; margin-bottom:6px; overflow-x:auto; padding-bottom:4px;" id="chatTargetTabs">
+        <button class="btn-outline" style="margin:0; padding:4px 8px; font-size:10px;" onclick="switchChatTarget('owner')">👑 Owner (Sara)</button>
+        <button class="btn-outline" style="margin:0; padding:4px 8px; font-size:10px;" onclick="switchChatTarget('admin1')">🛡️ Admin (Maha)</button>
+        <button class="btn-outline" style="margin:0; padding:4px 8px; font-size:10px;" onclick="switchChatTarget('admin2')">🛡️ Admin (Kainat)</button>
+        <button class="btn-outline" style="margin:0; padding:4px 8px; font-size:10px;" onclick="switchChatTarget('admin3')">🛡️ Admin (Zaman)</button>
+      </div>
+
+      <div id="chatMessages" style="flex:1; overflow-y:auto; background:rgba(0,0,0,0.4); padding:10px; border-radius:10px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;"></div>
+
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="chatInput" class="form-input" placeholder="Type message..." style="flex:1;">
+        <button class="btn-gold" style="width:auto; padding:0 16px;" onclick="sendChatMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSTANT SLIP INSPECTOR MODAL -->
+  <div id="slipModal" class="modal">
+    <div class="modal-box" style="text-align:center;">
+      <h4 style="color:var(--gold-primary); margin-bottom:10px;">TRANSACTION SLIP INSPECTOR</h4>
+      <img id="slipImage" src="" style="max-width:100%; max-height:60vh; border-radius:10px; border:1px solid var(--gold-primary);" alt="Slip Proof">
+      <button class="btn-outline" onclick="closeModal('slipModal')">Close Inspector</button>
+    </div>
+  </div>
+
+  <!-- ADMIN REQUEST FOLDERS MODAL -->
+  <div id="folderModal" class="modal">
+    <div class="modal-box" style="max-height:80vh; overflow-y:auto;">
+      <h4 id="folderTitle" style="color:var(--gold-primary); margin-bottom:12px;">REQUEST FOLDER</h4>
+      <div id="folderContent" style="display:grid; gap:10px;"></div>
+      <button class="btn-outline" onclick="closeModal('folderModal')">Close Folder</button>
+    </div>
+  </div>
+
+  <!-- FIREBASE ENGINE & SCRIPT LOGIC -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD5T0_Et0NveTSF5xBoWWAyMLScHcItzbw",
+      authDomain: "regal-crest-e0bbf.firebaseapp.com",
+      projectId: "regal-crest-e0bbf",
+      storageBucket: "regal-crest-e0bbf.firebasestorage.app",
+      messagingSenderId: "211402330865",
+      appId: "1:211402330865:web:1e5163966b06f6a4bf0f50"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    window.db = db;
+    window.dbRef = ref;
+    window.dbSet = set;
+    window.dbOnValue = onValue;
+    window.dbUpdate = update;
+    window.dbRemove = remove;
+    window.dbGet = get;
+
+    // REAL-TIME SYNC & ALERTS
+    window.dbOnValue(ref(db, 'users'), (snapshot) => {
+      const data = snapshot.val() || {};
+      window.allUsers = data;
+      renderAdminUserList();
+      updateAdminStats();
+    });
+
+    window.dbOnValue(ref(db, 'deposits'), (snapshot) => {
+      const data = snapshot.val() || {};
+      window.allDeposits = data;
+      triggerAdminTopAlert("🚨 NEW DEPOSIT SUBMITTED!");
+      updateAdminStats();
+    });
+
+    window.dbOnValue(ref(db, 'withdrawals'), (snapshot) => {
+      const data = snapshot.val() || {};
+      window.allWithdrawals = data;
+      triggerAdminTopAlert("🚨 NEW WITHDRAWAL REQUEST!");
+      updateAdminStats();
+    });
+
+    window.dbOnValue(ref(db, 'support_chats'), (snapshot) => {
+      triggerAdminTopAlert("💬 NEW CUSTOMER SERVICE MESSAGE!");
+    });
+  </script>
+
+  <script>
+    let currentAdminRole = null; // 'owner', 'admin1', 'admin2', 'admin3'
+
+    function verifyAdminPass() {
+      const input = document.getElementById('adminPassInput').value.trim();
+      if (input === "sara123") currentAdminRole = 'owner';
+      else if (input === "maha123") currentAdminRole = 'admin1';
+      else if (input === "kainat123") currentAdminRole = 'admin2';
+      else if (input === "zaman123") currentAdminRole = 'admin3';
+      else {
+        showCustomAlert("Invalid Passcode!");
+        return;
+      }
+      closeModal('adminAuthModal');
+      document.getElementById('pageAdmin').classList.add('active');
+      document.getElementById('adminPanelTitle').innerText = `PLATFORM STATS (${currentAdminRole.toUpperCase()})`;
+    }
+
+    function triggerAdminTopAlert(msg) {
+      if (currentAdminRole) {
+        const banner = document.getElementById('adminTopAlertBanner');
+        document.getElementById('adminTopAlertText').innerText = msg;
+        banner.style.display = 'flex';
+      }
+    }
+
+    function dismissTopAlert() {
+      document.getElementById('adminTopAlertBanner').style.display = 'none';
+    }
+
+    function renderAdminUserList() {
+      const container = document.getElementById('adminUserList');
+      if (!container || !window.allUsers) return;
+      container.innerHTML = "";
+      
+      Object.keys(window.allUsers).forEach(phone => {
+        const u = window.allUsers[phone];
+        const item = document.createElement('div');
+        item.style.cssText = "background:rgba(255,255,255,0.03); border:1px solid var(--card-border); padding:10px; border-radius:10px; font-size:12px;";
+        item.innerHTML = `
+          <div><b>Name:</b> ${u.name || 'Member'} | <b>Phone:</b> ${phone}</div>
+          <div style="color:var(--gold-primary);"><b>Password:</b> ${u.password || 'N/A'}</div>
+          <div style="margin-top:6px; display:flex; align-items:center; gap:6px;">
+            <span>Bal: PKR</span>
+            <input type="number" id="balInput_${phone}" value="${u.balance || 0}" style="width:70px; background:#000; color:#fff; border:1px solid var(--card-border); border-radius:4px; padding:2px 4px;">
+            <button onclick="updateUserBalance('${phone}')" style="background:var(--gold-primary); border:none; padding:4px 8px; border-radius:4px; font-weight:700; cursor:pointer;">Set Bal</button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function updateUserBalance(phone) {
+      const newVal = parseFloat(document.getElementById(`balInput_${phone}`).value) || 0;
+      window.dbUpdate(window.dbRef(window.db, `users/${phone}`), { balance: newVal })
+        .then(() => showCustomAlert(`Balance updated to PKR ${newVal} for ${phone}`));
+    }
+
+    function openAdminFolder(type) {
+      const folderTitle = document.getElementById('folderTitle');
+      const folderContent = document.getElementById('folderContent');
+      folderContent.innerHTML = "";
+
+      if (type === 'ep_dep' || type === 'jc_dep') {
+        const targetWallet = type === 'ep_dep' ? 'EasyPaisa' : 'JazzCash';
+        folderTitle.innerText = `${targetWallet} Deposit Requests`;
+        
+        if (window.allDeposits) {
+          Object.keys(window.allDeposits).forEach(id => {
+            const dep = window.allDeposits[id];
+            if (dep.wallet === targetWallet) {
+              folderContent.innerHTML += `
+                <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:8px; font-size:12px;">
+                  <div><b>User:</b> ${dep.phone} | <b>Amt:</b> PKR ${dep.amount}</div>
+                  <div style="margin-top:6px; display:flex; gap:6px;">
+                    <button class="btn-outline" style="margin:0; padding:4px;" onclick="openSlipModal('${dep.proofImg}')">Inspect Slip</button>
+                    <button class="btn-gold" style="margin:0; padding:4px;" onclick="approveDeposit('${id}')">Approve</button>
+                  </div>
+                </div>
+              `;
             }
-        });
-
-        function initFirebaseListeners() {
-            db.collection("regal_users").onSnapshot((snapshot) => {
-                cachedUsers = [];
-                snapshot.forEach(doc => cachedUsers.push(doc.data()));
-                const savedUser = localStorage.getItem('regal_user_mobile');
-                if(savedUser && !document.getElementById('dashboardView').classList.contains('hidden')) {
-                    loadDashboard();
-                }
-                if(!document.getElementById('adminPanelView').classList.contains('hidden')) {
-                    loadAdminPanel();
-                }
-            });
-
-            db.collection("regal_deposits").onSnapshot((snapshot) => {
-                cachedDeposits = [];
-                snapshot.forEach(doc => cachedDeposits.push({ id: doc.id, ...doc.data() }));
-                if(!document.getElementById('adminPanelView').classList.contains('hidden')) {
-                    loadAdminPanel();
-                }
-            });
-
-            db.collection("regal_withdraws").onSnapshot((snapshot) => {
-                cachedWithdraws = [];
-                snapshot.forEach(doc => cachedWithdraws.push({ id: doc.id, ...doc.data() }));
-                if(!document.getElementById('adminPanelView').classList.contains('hidden')) {
-                    loadAdminPanel();
-                }
-            });
+          });
         }
+      }
+      openModal('folderModal');
+    }
 
-        function showView(viewId) {
-            ['signupView', 'loginView', 'adminLoginView', 'dashboardView', 'depositView', 'withdrawView', 'menuView', 'adminPanelView'].forEach(v => {
-                const el = document.getElementById(v);
-                if(el) el.classList.add('hidden');
-            });
-            const target = document.getElementById(viewId);
-            if(target) target.classList.remove('hidden');
+    function openSlipModal(imgSrc) {
+      document.getElementById('slipImage').src = imgSrc || 'https://via.placeholder.com/300x400?text=No+Slip+Image';
+      openModal('slipModal');
+    }
 
-            const navBar = document.getElementById('bottomNavBar');
-            if(['dashboardView', 'depositView', 'withdrawView', 'menuView'].includes(viewId)) {
-                navBar.style.display = 'flex';
-            } else {
-                navBar.style.display = 'none';
-            }
+    function showCustomAlert(msg) {
+      document.getElementById('customAlertText').innerText = msg;
+      openModal('customAlertModal');
+    }
 
-            if(viewId === 'dashboardView') loadDashboard();
-            if(viewId === 'adminPanelView') loadAdminPanel();
-        }
-
-        function switchNav(viewId, el) {
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            el.classList.add('active');
-            showView(viewId);
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toastBox');
-            toast.innerText = msg;
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 3000);
-        }
-
-        function unlockAdmin() {
-            tapCount++;
-            setTimeout(() => { tapCount = 0; }, 1000);
-            if(tapCount >= 5) {
-                tapCount = 0;
-                showView('adminLoginView');
-            }
-        }
-
-        function handleSignUp() {
-            const name = document.getElementById('suName').value.trim();
-            const mobile = document.getElementById('suMobile').value.trim();
-            const pass = document.getElementById('suPassword').value;
-            const refCode = document.getElementById('suRefCode').value.trim();
-
-            if(!name || !mobile || !pass) {
-                showToast("Please fill all fields!");
-                return;
-            }
-
-            const myRefCode = "RC" + Math.floor(1000 + Math.random() * 9000);
-            const newUser = {
-                name: name,
-                mobile: mobile,
-                pass: pass,
-                balance: 0.00,
-                totalEarned: 0.00,
-                dailyEarned: 70.00,
-                packageName: "Tier II - Bronze Executive",
-                packageDetails: "Daily: PKR 70 | Total (60D): PKR 4,200",
-                refCode: myRefCode,
-                referredBy: refCode || "",
-                lastClaimTime: 0
-            };
-
-            db.collection("regal_users").doc(mobile).set(newUser).then(() => {
-                localStorage.setItem('regal_user_mobile', mobile);
-                showToast("Account Created Successfully!");
-                showView('dashboardView');
-            }).catch(err => {
-                showToast("Error: " + err.message);
-            });
-        }
-
-        function handleLogin() {
-            const mobile = document.getElementById('logMobile').value.trim();
-            const pass = document.getElementById('logPassword').value;
-
-            if(!mobile || !pass) {
-                showToast("Enter Mobile Number and Password!");
-                return;
-            }
-
-            db.collection("regal_users").doc(mobile).get().then(doc => {
-                if(!doc.exists) {
-                    showToast("Account not found!");
-                    return;
-                }
-                const user = doc.data();
-                if(user.pass !== pass) {
-                    showToast("Incorrect Password!");
-                    return;
-                }
-
-                localStorage.setItem('regal_user_mobile', user.mobile);
-                showToast("Login Successful!");
-                showView('dashboardView');
-            }).catch(err => {
-                showToast("Error: " + err.message);
-            });
-        }
-
-        function handleAdminLogin() {
-            const pass = document.getElementById('adminPass').value;
-            if(pass === 'sara123') {
-                showToast("Admin Authorized!");
-                showView('adminPanelView');
-            } else {
-                showToast("Wrong Passcode!");
-            }
-        }
-
-        function handleLogout() {
-            localStorage.removeItem('regal_user_mobile');
-            showToast("Logged out successfully.");
-            showView('signupView');
-        }
-
-        function loadDashboard() {
-            const mobile = localStorage.getItem('regal_user_mobile');
-            if(!mobile) { showView('signupView'); return; }
-
-            const user = cachedUsers.find(u => u.mobile === mobile);
-            if(!user) return;
-
-            document.getElementById('dashGreeting').innerText = "Welcome, " + user.name;
-            document.getElementById('userBalance').innerText = "PKR " + (user.balance || 0).toFixed(2);
-            document.getElementById('statDaily').innerText = "PKR " + (user.dailyEarned || 70);
-            document.getElementById('statTotal').innerText = "PKR " + (user.totalEarned || 4200).toFixed(2);
-            document.getElementById('activePkgName').innerText = user.packageName || "Tier II - Bronze Executive";
-            document.getElementById('activePkgDetails').innerText = user.packageDetails || "Daily: PKR 70 | Total (60D): PKR 4,200";
-            document.getElementById('refLinkText').innerText = window.location.origin + "/?ref=" + user.refCode;
-        }
-
-        function claimEarnings() {
-            const mobile = localStorage.getItem('regal_user_mobile');
-            const user = cachedUsers.find(u => u.mobile === mobile);
-            if(!user) return;
-
-            const now = Date.now();
-            const cooldown = 24 * 60 * 60 * 1000; // 24 Hours
-
-            if(user.lastClaimTime && (now - user.lastClaimTime < cooldown)) {
-                const remainingHours = Math.ceil((cooldown - (now - user.lastClaimTime)) / (1000 * 60 * 60));
-                showToast(`Already claimed! Next claim available in ${remainingHours} hours.`);
-                return;
-            }
-
-            user.balance = (user.balance || 0) + 70;
-            user.totalEarned = (user.totalEarned || 0) + 70;
-            user.lastClaimTime = now;
-
-            db.collection("regal_users").doc(mobile).set(user, { merge: true }).then(() => {
-                showToast("PKR 70 Claimed Successfully & Added to Balance!");
-                loadDashboard();
-            });
-        }
-
-        function submitDeposit() {
-            const wallet = document.getElementById('depWallet').value;
-            const amt = parseFloat(document.getElementById('depAmount').value);
-            const trx = document.getElementById('depTrx').value.trim();
-            const mobile = localStorage.getItem('regal_user_mobile');
-            const user = cachedUsers.find(u => u.mobile === mobile);
-
-            if(!amt || !trx) { showToast("Enter amount and Transaction ID!"); return; }
-
-            const depositData = {
-                mobile: mobile,
-                name: user ? user.name : "Unknown",
-                wallet: wallet,
-                amount: amt,
-                trxId: trx,
-                date: new Date().toLocaleString(),
-                status: "Pending"
-            };
-
-            db.collection("regal_deposits").add(depositData).then(() => {
-                showToast("Deposit request submitted successfully!");
-                showView('dashboardView');
-            });
-        }
-
-        function submitWithdraw() {
-            const amt = parseFloat(document.getElementById('withAmount').value);
-            const account = document.getElementById('withAccount').value.trim();
-            const mobile = localStorage.getItem('regal_user_mobile');
-            const user = cachedUsers.find(u => u.mobile === mobile);
-
-            if(!amt || !account) { showToast("Enter amount and account number!"); return; }
-            if(user.balance < amt) { showToast("Insufficient Wallet Balance!"); return; }
-
-            const withdrawData = {
-                mobile: mobile,
-                name: user ? user.name : "Unknown",
-                account: account,
-                amount: amt,
-                date: new Date().toLocaleString(),
-                status: "Pending"
-            };
-
-            db.collection("regal_withdraws").add(withdrawData).then(() => {
-                showToast("Withdrawal request submitted successfully!");
-                showView('dashboardView');
-            });
-        }
-
-        function loadAdminPanel() {
-            // 1. Users & Custom Balance Update & Reset
-            const userContainer = document.getElementById('adminUserList');
-            userContainer.innerHTML = "";
-            if(cachedUsers.length === 0) {
-                userContainer.innerHTML = "<div>No users found.</div>";
-            } else {
-                cachedUsers.forEach(u => {
-                    userContainer.innerHTML += `<div style="padding:6px; border-bottom:1px solid rgba(212,175,55,0.2);">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div><b>${u.name}</b> (${u.mobile})<br>Bal: PKR ${u.balance.toFixed(2)}</div>
-                            <div>
-                                <button class="btn-danger" style="padding:3px 6px;" onclick="resetUserBalance('${u.mobile}')">Reset 0</button>
-                            </div>
-                        </div>
-                        <div style="margin-top:5px; display:flex; gap:4px;">
-                            <input type="number" id="editBal_${u.mobile}" placeholder="New bal" value="${u.balance}" style="padding:4px; font-size:10px; width:70%;">
-                            <button class="btn-green" style="padding:4px 6px; font-size:9px; width:30%; margin-top:0;" onclick="updateUserBalance('${u.mobile}')">Set Bal</button>
-                        </div>
-                    </div>`;
-                });
-            }
-
-            // 2. Deposits & Status Control
-            const depContainer = document.getElementById('adminDepositList');
-            depContainer.innerHTML = "";
-            if(cachedDeposits.length === 0) {
-                depContainer.innerHTML = "<div>No deposit requests.</div>";
-            } else {
-                cachedDeposits.forEach(d => {
-                    let statusColor = d.status === 'Approved' ? 'var(--green)' : (d.status === 'Rejected' ? '#DC2626' : 'var(--gold)');
-                    depContainer.innerHTML += `<div style="padding:6px; border-bottom:1px solid rgba(212,175,55,0.2);">
-                        <div style="display:flex; justify-content:space-between;">
-                            <div><b>${d.name}</b>: PKR ${d.amount} (${d.wallet})<br>Status: <span style="color:${statusColor}; font-weight:bold;">${d.status || 'Pending'}</span></div>
-                            <div>
-                                <button class="btn-outline" style="padding:2px 5px; font-size:9px;" onclick="viewSlip('${d.name}', '${d.wallet}', '${d.amount}', '${d.trxId}', '${d.date}')">Slip</button>
-                                <button class="btn-danger" style="margin-left:2px;" onclick="removeDeposit('${d.id}')">Del</button>
-                            </div>
-                        </div>
-                        <div style="margin-top:4px;">
-                            <button class="btn-green" style="padding:2px 6px; font-size:9px; width:auto;" onclick="updateDepositStatus('${d.id}', 'Approved', '${d.mobile}', ${d.amount})">Approve</button>
-                            <button class="btn-danger" style="padding:2px 6px; font-size:9px; width:auto; display:inline-block;" onclick="updateDepositStatus('${d.id}', 'Rejected', '${d.mobile}', ${d.amount})">Reject</button>
-                        </div>
-                    </div>`;
-                });
-            }
-
-            // 3. Withdrawals & Status Control
-            const withContainer = document.getElementById('adminWithdrawList');
-            withContainer.innerHTML = "";
-            if(cachedWithdraws.length === 0) {
-                withContainer.innerHTML = "<div>No withdrawal requests.</div>";
-            } else {
-                cachedWithdraws.forEach(w => {
-                    let statusColor = w.status === 'Approved' ? 'var(--green)' : (w.status === 'Rejected' ? '#DC2626' : 'var(--gold)');
-                    withContainer.innerHTML += `<div style="padding:6px; border-bottom:1px solid rgba(212,175,55,0.2);">
-                        <div style="display:flex; justify-content:space-between;">
-                            <div><b>${w.name}</b>: PKR ${w.amount} (${w.account})<br>Status: <span style="color:${statusColor}; font-weight:bold;">${w.status || 'Pending'}</span></div>
-                            <div>
-                                <button class="btn-danger" onclick="removeWithdraw('${w.id}')">Del</button>
-                            </div>
-                        </div>
-                        <div style="margin-top:4px;">
-                            <button class="btn-green" style="padding:2px 6px; font-size:9px; width:auto;" onclick="updateWithdrawStatus('${w.id}', 'Approved', '${w.mobile}', ${w.amount})">Approve</button>
-                            <button class="btn-danger" style="padding:2px 6px; font-size:9px; width:auto; display:inline-block;" onclick="updateWithdrawStatus('${w.id}', 'Rejected', '${w.mobile}', ${w.amount})">Reject</button>
-                        </div>
-                    </div>`;
-                });
-            }
-        }
-
-        function updateUserBalance(mobile) {
-            const inputVal = document.getElementById(`editBal_${mobile}`).value;
-            const newBalance = parseFloat(inputVal);
-            if(isNaN(newBalance)) { showToast("Enter a valid amount!"); return; }
-
-            const user = cachedUsers.find(u => u.mobile === mobile);
-            if(user) {
-                user.balance = newBalance;
-                db.collection("regal_users").doc(mobile).set(user, { merge: true }).then(() => {
-                    showToast(`User balance updated to PKR ${newBalance}!`);
-                });
-            }
-        }
-
-        function updateDepositStatus(id, status, mobile, amount) {
-            db.collection("regal_deposits").doc(id).update({ status: status }).then(() => {
-                if(status === 'Approved') {
-                    const user = cachedUsers.find(u => u.mobile === mobile);
-                    if(user) {
-                        user.balance = (user.balance || 0) + amount;
-                        db.collection("regal_users").doc(mobile).set(user, { merge: true });
-
-                        // Give 20% referral reward if applicable
-                        if(user.referredBy) {
-                            const referrer = cachedUsers.find(u => u.refCode === user.referredBy);
-                            if(referrer) {
-                                const reward = amount * 0.20;
-                                referrer.balance = (referrer.balance || 0) + reward;
-                                db.collection("regal_users").doc(referrer.mobile).set(referrer, { merge: true });
-                            }
-                        }
-                    }
-                }
-                showToast(`Deposit marked as ${status}!`);
-            });
-        }
-
-        function updateWithdrawStatus(id, status, mobile, amount) {
-            db.collection("regal_withdraws").doc(id).update({ status: status }).then(() => {
-                if(status === 'Rejected') {
-                    // Refund balance if rejected
-                    const user = cachedUsers.find(u => u.mobile === mobile);
-                    if(user) {
-                        user.balance = (user.balance || 0) + amount;
-                        db.collection("regal_users").doc(mobile).set(user, { merge: true });
-                    }
-                }
-                showToast(`Withdrawal marked as ${status}!`);
-            });
-        }
-
-        function resetUserBalance(mobile) {
-            const user = cachedUsers.find(u => u.mobile === mobile);
-            if(user) {
-                user.balance = 0;
-                user.totalEarned = 0;
-                db.collection("regal_users").doc(mobile).set(user, { merge: true }).then(() => {
-                    showToast("User balance & earnings reset to 0!");
-                });
-            }
-        }
-
-        function removeDeposit(id) {
-            db.collection("regal_deposits").doc(id).delete().then(() => {
-                showToast("Transaction removed!");
-            });
-        }
-
-        function removeWithdraw(id) {
-            db.collection("regal_withdraws").doc(id).delete().then(() => {
-                showToast("Withdrawal record removed!");
-            });
-        }
-
-        function viewSlip(name, wallet, amount, trxId, date) {
-            const slipDetails = document.getElementById('slipDetails');
-            slipDetails.innerHTML = `
-                <b>Investor Name:</b> ${name}<br>
-                <b>Wallet Type:</b> ${wallet}<br>
-                <b>Amount:</b> PKR ${amount}<br>
-                <b>Transaction ID:</b> ${trxId}<br>
-                <b>Date & Time:</b> ${date}<br>
-                <b>Status:</b> <span style="color:var(--green);">Verified Slip</span>
-            `;
-            document.getElementById('slipModal').style.display = 'flex';
-        }
-
-        function closeSlipModal() {
-            document.getElementById('slipModal').style.display = 'none';
-        }
-
-        function copyRefLink() {
-            navigator.clipboard.writeText(document.getElementById('refLinkText').innerText);
-            showToast("Referral Link Copied!");
-        }
-    </script>
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+  </script>
 </body>
 </html>
