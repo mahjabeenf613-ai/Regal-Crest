@@ -22,24 +22,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; user-select: none; }
     body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; overflow-x: hidden; position: relative; }
 
-    /* REALTIME TOP NOTIFICATION BANNER FOR ADMINS */
-    #adminTopAlertBanner {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      background: linear-gradient(90deg, #B91C1C 0%, #EF4444 100%);
-      color: #FFF;
-      padding: 10px 16px;
-      font-size: 12px;
-      font-weight: 700;
-      z-index: 10000;
-      box-shadow: 0 4px 15px rgba(239,68,68,0.5);
-      align-items: center;
-      justify-content: space-between;
-      animation: slideDown 0.3s ease-out;
-    }
-    @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
-
     .app-header {
       background: rgba(16, 24, 40, 0.9);
       backdrop-filter: blur(12px);
@@ -82,6 +64,7 @@
       width: 100%; background: var(--gold-gradient); color: #000; font-weight: 800; font-size: 14px;
       padding: 14px; border: none; border-radius: 10px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
     }
+    .btn-gold:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-outline {
       width: 100%; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-primary);
       font-weight: 700; font-size: 13px; padding: 12px; border-radius: 10px; cursor: pointer; margin-top: 10px;
@@ -98,19 +81,38 @@
 
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 200; justify-content: center; align-items: center; padding: 20px; }
     .modal.active { display: flex; }
-    .modal-box { background: var(--card-bg); border: 1px solid var(--gold-primary); width: 100%; max-width: 420px; border-radius: 18px; padding: 22px; position: relative; max-height: 85vh; overflow-y: auto; }
+    .modal-box { background: var(--card-bg); border: 1px solid var(--gold-primary); width: 100%; max-width: 400px; border-radius: 18px; padding: 22px; position: relative; max-height: 85vh; overflow-y: auto; }
+
+    .badge-status { padding: 4px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; display: inline-block; }
+    .status-pending { background: rgba(234, 179, 8, 0.15); color: #EAB308; border: 1px solid #EAB308; }
+    .status-success { background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid #10B981; }
+    .status-rejected { background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid #EF4444; }
+    .status-none { background: rgba(148, 163, 184, 0.15); color: #94A3B8; border: 1px solid #475569; }
+
+    #toastContainer {
+      position: fixed; top: 70px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; max-width: 320px; pointer-events: none;
+    }
+    .toast-alert {
+      background: rgba(16, 24, 40, 0.95); border: 1px solid var(--gold-primary); color: #fff; padding: 12px 16px; border-radius: 12px;
+      font-size: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); pointer-events: auto; animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
     .kill-screen { display: none; position: fixed; inset: 0; background: #050505; color: #EF4444; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
     .kill-screen.active { display: flex; }
+
+    .flower-petal {
+      position: fixed; top: -50px; z-index: 99999; user-select: none; pointer-events: none; animation: fallPetal linear forwards;
+    }
+    @keyframes fallPetal {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(105vh) rotate(360deg); opacity: 0.2; }
+    }
   </style>
 </head>
 <body>
 
-  <!-- ADMIN SECRET TOP LIVE ALERT BANNER -->
-  <div id="adminTopAlertBanner">
-    <span id="adminTopAlertText">🚨 NEW ACTIVITY ALERT</span>
-    <button onclick="dismissTopAlert()" style="background:none; border:none; color:#fff; font-weight:800; cursor:pointer;">✕</button>
-  </div>
+  <div id="toastContainer"></div>
 
   <div id="killScreen" class="kill-screen">
     <h1 style="font-family:'Cinzel'; font-size:32px; margin-bottom:12px;">SYSTEM OFFLINE</h1>
@@ -191,10 +193,12 @@
         <div style="font-size:20px; font-weight:800; color:var(--gold-primary);" id="dashWalletBalance">PKR 0</div>
       </div>
 
+      <!-- CLAIM 24 HOURS TIMER BUTTON -->
       <div style="margin-top:12px;" id="claimSection">
         <button class="btn-gold" id="claimDailyBtn" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color:#fff; font-size:13px; padding:12px;" onclick="claimDailyEarning()">
-          ⚡ CLAIM TODAY'S EARNING (PKR <span id="claimableAmt">0</span>)
+          ⚡ CLAIM EARNING (PKR <span id="claimableAmt">0</span>)
         </button>
+        <div style="font-size:11px; color:var(--text-sub); margin-top:4px;" id="claimTimerText">Next claim unlocks in 24 hours after package activation.</div>
       </div>
 
       <div style="margin-top:12px; display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
@@ -209,17 +213,45 @@
       </div>
     </div>
 
+    <!-- MY ACTIVE INVESTMENT PACKAGES -->
     <div class="gold-card">
       <div style="font-size:12px; font-weight:700; color:var(--gold-primary); margin-bottom:8px;">MY ACTIVE INVESTMENT PACKAGES</div>
       <div id="activePlansContainer" style="font-size:13px; color:var(--text-sub);">No active package subscribed yet.</div>
     </div>
 
+    <!-- MY TEAM / REFERRALS LIST (OLD & NEW) -->
+    <div class="gold-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="font-size:12px; font-weight:700; color:var(--gold-primary);">👥 MY REFERRALS & TEAM (<span id="myTeamCount">0</span>)</div>
+      </div>
+      <div id="myTeamList" style="font-size:12px; color:var(--text-sub); max-height:160px; overflow-y:auto; display:grid; gap:6px;">
+        <div>No referred members found yet.</div>
+      </div>
+    </div>
+
+    <!-- FINANCIAL LEDGER & ACTIVITY -->
+    <div class="gold-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="font-size:12px; font-weight:700; color:var(--gold-primary);">📊 FINANCIAL LEDGER & ACTIVITY</div>
+      </div>
+      <div id="financialLedgerList" style="font-size:12px; color:var(--text-sub); max-height:150px; overflow-y:auto; display:grid; gap:6px;">
+        <div>No transactions or claims recorded yet.</div>
+      </div>
+    </div>
+
+    <!-- REFERRAL & INVITE LINK -->
     <div class="gold-card">
       <div style="font-size:12px; font-weight:700; color:var(--gold-primary); margin-bottom:8px;">REFERRAL & INVITE LINK (20% REWARD)</div>
       <div style="margin-bottom:10px;">
         <input type="text" id="refLinkInput" class="form-input" readonly value="https://regalcrest.app/ref=139722" style="font-size:12px; background:rgba(0,0,0,0.5);">
       </div>
       <button class="btn-gold" style="padding:14px; font-size:14px; margin-bottom:12px;" onclick="copyRefLink()">📋 COPY REFERRAL LINK</button>
+      
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
+        <button class="btn-outline" style="margin:0; font-size:11px; padding:10px;" onclick="shareSocial('wa')">WhatsApp</button>
+        <button class="btn-outline" style="margin:0; font-size:11px; padding:10px;" onclick="shareSocial('tg')">Telegram</button>
+        <button class="btn-outline" style="margin:0; font-size:11px; padding:10px;" onclick="shareSocial('fb')">Facebook</button>
+      </div>
     </div>
   </div>
 
@@ -261,7 +293,7 @@
           <label class="form-label">Transaction Screenshot (Mandatory)</label>
           <input type="file" id="depProof" class="form-input" accept="image/*">
         </div>
-        <button class="btn-gold" onclick="submitDeposit()">SUBMIT DEPOSIT</button>
+        <button class="btn-gold" id="depSubmitBtn" onclick="submitDeposit()">SUBMIT DEPOSIT</button>
       </div>
     </div>
 
@@ -304,9 +336,22 @@
         </div>
         <div class="form-group">
           <label class="form-label">Amount (PKR)</label>
-          <input type="number" id="wdAmount" class="form-input" placeholder="Min PKR 200">
+          <input type="number" id="wdAmount" class="form-input" placeholder="Min PKR 200" oninput="calcWithdrawFee()">
         </div>
-        <button class="btn-gold" onclick="submitWithdraw()">REQUEST WITHDRAWAL</button>
+
+        <div style="background:rgba(255,215,0,0.05); border:1px dashed rgba(255,215,0,0.3); padding:12px; border-radius:10px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+            <span style="color:var(--text-sub);">Requested:</span> <span id="feeReq">PKR 0</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+            <span style="color:var(--text-sub);">Fee (10%):</span> <span id="feeCut" style="color:var(--accent-red);">PKR 0</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700;">
+            <span style="color:var(--gold-primary);">You Receive:</span> <span id="feeNet" style="color:var(--accent-green);">PKR 0</span>
+          </div>
+        </div>
+
+        <button class="btn-gold" id="wdSubmitBtn" onclick="submitWithdraw()">REQUEST WITHDRAWAL</button>
       </div>
     </div>
 
@@ -314,6 +359,27 @@
       <div class="gold-card">
         <div style="font-size:13px; font-weight:700; color:var(--gold-primary); margin-bottom:10px;">WITHDRAWAL HISTORY</div>
         <div id="wdHistoryList" style="display:grid; gap:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE PAGE -->
+  <div id="pageProfile" class="page">
+    <div class="gold-card" style="text-align:center;">
+      <div style="font-size:40px; margin-bottom:10px;">👤</div>
+      <h3 style="font-family:'Cinzel'; color:var(--gold-primary); margin-bottom:6px;" id="profileNameDisplay">Member Name</h3>
+      <div style="font-size:13px; color:var(--text-sub); margin-bottom:4px;" id="profilePhoneDisplay">03XXXXXXXXX</div>
+      <div style="font-size:12px; color:var(--gold-primary); font-weight:700; margin-bottom:16px;">Invite Code: <span id="profileCodeDisplay" style="color:#fff;">RC0000</span></div>
+      
+      <button class="btn-gold" style="margin-bottom:10px; padding:12px;" onclick="copyProfileInviteLink()">📋 Copy Invite Link</button>
+    </div>
+
+    <div class="gold-card">
+      <div style="font-size:12px; font-weight:700; color:var(--gold-primary); margin-bottom:12px;">ACCOUNT SETTINGS</div>
+      <div style="display:grid; gap:10px;">
+        <button class="btn-outline" style="margin:0;" onclick="openChangePassModal()">🔑 Change Password</button>
+        <button class="btn-outline" style="margin:0;" onclick="switchAnotherAccount()">👤 Switch Another Account</button>
+        <button class="btn-gold" style="margin-top:4px; background:var(--accent-red); color:#fff;" onclick="logout()">🚪 Logout</button>
       </div>
     </div>
   </div>
@@ -338,6 +404,23 @@
         <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px;">Total Dep: <b id="admTotalDep">PKR 0</b></div>
         <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px;">Total Wd: <b id="admTotalWd">PKR 0</b></div>
       </div>
+      <div style="background:rgba(255,215,0,0.05); border:1px solid rgba(255,215,0,0.2); padding:10px; border-radius:8px; font-size:12px;">
+        <div style="color:var(--gold-primary); font-weight:700; margin-bottom:2px;" id="adminProfitLabel">My Revenue / Profit:</div>
+        <div style="font-size:16px; font-weight:800; color:var(--accent-green);" id="admProfitVal">PKR 0</div>
+      </div>
+    </div>
+
+    <div class="gold-card">
+      <div style="font-size:12px; color:var(--gold-primary); font-weight:700; margin-bottom:8px;">PUBLIC LINKS PUBLISHER</div>
+      <div class="form-group">
+        <label class="form-label">Public Invite Domain Link</label>
+        <input type="text" id="admInviteLink" class="form-input" value="https://regalcrest-invest.app">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Public APK Download Link</label>
+        <input type="text" id="admApkLink" class="form-input" value="https://regalcrest-invest.app/download.apk">
+      </div>
+      <button class="btn-gold" onclick="updateAdminLinks()">PUBLISH LINKS</button>
     </div>
 
     <!-- SEPARATE REQUEST FOLDERS -->
@@ -348,9 +431,9 @@
       <button class="btn-outline" style="margin:0; font-size:11px;" onclick="openAdminFolder('jc_wd')">JazzCash Wd Requests</button>
     </div>
 
-    <!-- USER MANAGEMENT WITH REAL PASSWORDS & EDITABLE BALANCE -->
+    <!-- USER MANAGEMENT WITH PASSWORD, BALANCE EDIT & BAN/REMOVE -->
     <div class="gold-card">
-      <div style="font-size:12px; color:var(--gold-primary); font-weight:700; margin-bottom:8px;">USER MANAGEMENT, PASSWORDS & BALANCE EDIT</div>
+      <div style="font-size:12px; color:var(--gold-primary); font-weight:700; margin-bottom:8px;">USER MANAGEMENT (<span id="admAllUsersCount">0</span>)</div>
       <div id="adminUserList" style="display:grid; gap:8px;"></div>
     </div>
   </div>
@@ -361,17 +444,32 @@
     <div class="nav-item" onclick="navTo('pagePlans', this)"><span class="nav-icon">💎</span>Plans</div>
     <div class="nav-item" onclick="navTo('pageDeposit', this)"><span class="nav-icon">📥</span>Deposit</div>
     <div class="nav-item" onclick="navTo('pageWithdraw', this)"><span class="nav-icon">📤</span>Withdraw</div>
-    <div class="nav-item" onclick="openMenuModal()"><span class="nav-icon">☰</span>Menu</div>
+    <div class="nav-item" onclick="navTo('pageProfile', this)"><span class="nav-icon">👤</span>Profile</div>
   </nav>
 
-  <!-- LUXURY MENU MODAL -->
-  <div id="menuModal" class="modal">
-    <div class="modal-box" style="text-align:center;">
-      <h3 style="font-family:'Cinzel'; color:var(--gold-primary); margin-bottom:16px;">EXECUTIVE MENU</h3>
-      <div style="display:grid; gap:10px;">
-        <button class="btn-gold" style="margin-top:6px; background:var(--accent-red); color:#fff;" onclick="closeModal('menuModal'); logout()">🚪 Logout</button>
+  <!-- CHANGE PASSWORD MODAL -->
+  <div id="changePassModal" class="modal">
+    <div class="modal-box">
+      <h3 style="font-family:'Cinzel'; color:var(--gold-primary); text-align:center; margin-bottom:14px;">CHANGE PASSWORD</h3>
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input type="password" id="newPassInput" class="form-input" placeholder="Enter new password">
       </div>
-      <button class="btn-outline" style="margin-top:14px; border-color:var(--text-sub); color:var(--text-sub);" onclick="closeModal('menuModal')">Cancel</button>
+      <button class="btn-gold" onclick="submitChangePassword()">UPDATE PASSWORD</button>
+      <button class="btn-outline" onclick="closeModal('changePassModal')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- EDIT USER BALANCE MODAL -->
+  <div id="editBalanceModal" class="modal">
+    <div class="modal-box">
+      <h3 style="font-family:'Cinzel'; color:var(--gold-primary); text-align:center; margin-bottom:14px;">CORRECT USER BALANCE</h3>
+      <div class="form-group">
+        <label class="form-label">User: <span id="editUserNameTarget"></span></label>
+        <input type="number" id="editUserBalanceInput" class="form-input" placeholder="Enter exact corrected amount">
+      </div>
+      <button class="btn-gold" onclick="saveCorrectedUserBalance()">SAVE CORRECTED BALANCE</button>
+      <button class="btn-outline" onclick="closeModal('editBalanceModal')">Cancel</button>
     </div>
   </div>
 
@@ -385,14 +483,13 @@
     </div>
   </div>
 
-  <!-- ADMIN STEALTH PASSCODE AUTH MODAL -->
+  <!-- ADMIN AUTH MODAL -->
   <div id="adminAuthModal" class="modal">
     <div class="modal-box">
       <h3 style="font-family:'Cinzel'; color:var(--gold-primary); text-align:center; margin-bottom:14px;">STEALTH ADMIN AUTH</h3>
       <div class="form-group">
         <label class="form-label">Security Access Passcode</label>
-        <!-- NO DOTS / NO MASKING IN INPUT AS REQUESTED -->
-        <input type="text" id="adminPassInput" class="form-input" style="-webkit-text-security: none; color:#fff;" placeholder="Enter fixed passcode">
+        <input type="password" id="adminPassInput" class="form-input" placeholder="Enter fixed passcode">
       </div>
       <button class="btn-gold" onclick="verifyAdminPass()">AUTHENTICATE</button>
       <button class="btn-outline" onclick="closeModal('adminAuthModal')">Cancel</button>
@@ -414,7 +511,15 @@
         <button class="btn-outline" style="margin:0; padding:4px 8px; font-size:10px;" onclick="switchChatTarget('admin3')">🛡️ Admin (Zaman)</button>
       </div>
 
-      <div id="chatMessages" style="flex:1; overflow-y:auto; background:rgba(0,0,0,0.4); padding:10px; border-radius:10px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="font-size:11px; color:var(--gold-primary);" id="activeChatIndicator">Chatting with: Owner (Sara)</div>
+      </div>
+      
+      <div id="chatMessages" style="flex:1; overflow-y:auto; background:rgba(0,0,0,0.4); padding:10px; border-radius:10px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;">
+        <div style="background:var(--card-border); padding:8px 12px; border-radius:8px; max-width:80%; font-size:12px;">
+          <b>Support Team:</b> Welcome to Regal Crest Support. How may we assist your portfolio today?
+        </div>
+      </div>
 
       <div style="display:flex; gap:6px;">
         <input type="text" id="chatInput" class="form-input" placeholder="Type message..." style="flex:1;">
@@ -423,16 +528,18 @@
     </div>
   </div>
 
-  <!-- INSTANT SLIP INSPECTOR MODAL -->
+  <!-- SLIP INSPECTOR MODAL -->
   <div id="slipModal" class="modal">
-    <div class="modal-box" style="text-align:center;">
-      <h4 style="color:var(--gold-primary); margin-bottom:10px;">TRANSACTION SLIP INSPECTOR</h4>
-      <img id="slipImage" src="" style="max-width:100%; max-height:60vh; border-radius:10px; border:1px solid var(--gold-primary);" alt="Slip Proof">
-      <button class="btn-outline" onclick="closeModal('slipModal')">Close Inspector</button>
+    <div class="modal-box" style="text-align:center; background:#000; border:1px solid var(--gold-primary); max-width:95vw; max-height:95vh; padding:10px;">
+      <h4 style="color:var(--gold-primary); margin-bottom:6px; font-size:12px;">TRANSACTION SLIP INSPECTOR</h4>
+      <div style="width:100%; height:75vh; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+        <img id="slipImage" src="" style="width:100%; height:100%; object-fit:contain; border-radius:8px;" alt="Slip Proof">
+      </div>
+      <button class="btn-outline" style="margin-top:8px;" onclick="closeModal('slipModal')">Close Inspector</button>
     </div>
   </div>
 
-  <!-- ADMIN REQUEST FOLDERS MODAL -->
+  <!-- FOLDER MODAL -->
   <div id="folderModal" class="modal">
     <div class="modal-box" style="max-height:80vh; overflow-y:auto;">
       <h4 id="folderTitle" style="color:var(--gold-primary); margin-bottom:12px;">REQUEST FOLDER</h4>
@@ -441,7 +548,17 @@
     </div>
   </div>
 
-  <!-- FIREBASE ENGINE & SCRIPT LOGIC -->
+  <!-- UPDATE MODAL -->
+  <div id="updateModal" class="modal" style="background:rgba(0,0,0,0.95); z-index:99999;">
+    <div class="modal-box" style="text-align:center;">
+      <div style="font-size:36px; margin-bottom:10px;">🚀</div>
+      <h3 style="font-family:'Cinzel'; color:var(--gold-primary); margin-bottom:10px;">SYSTEM UPDATE REQUIRED</h3>
+      <p style="font-size:13px; color:var(--text-sub); margin-bottom:20px;">A mandatory security and feature update is available for Regal Crest. Please update to continue.</p>
+      <button class="btn-gold" onclick="window.location.reload()">UPDATE & RELOAD APP</button>
+    </div>
+  </div>
+
+  <!-- FIREBASE SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js";
@@ -452,7 +569,8 @@
       projectId: "regal-crest-e0bbf",
       storageBucket: "regal-crest-e0bbf.firebasestorage.app",
       messagingSenderId: "211402330865",
-      appId: "1:211402330865:web:1e5163966b06f6a4bf0f50"
+      appId: "1:211402330865:web:1e5163966b06f6a4bf0f50",
+      measurementId: "G-8R1VLCWG2E"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -464,133 +582,1101 @@
     window.dbUpdate = update;
     window.dbRemove = remove;
     window.dbGet = get;
+    window.firebaseReady = true;
 
-    // REAL-TIME SYNC & ALERTS
-    window.dbOnValue(ref(db, 'users'), (snapshot) => {
-      const data = snapshot.val() || {};
-      window.allUsers = data;
-      renderAdminUserList();
-      updateAdminStats();
-    });
-
-    window.dbOnValue(ref(db, 'deposits'), (snapshot) => {
-      const data = snapshot.val() || {};
-      window.allDeposits = data;
-      triggerAdminTopAlert("🚨 NEW DEPOSIT SUBMITTED!");
-      updateAdminStats();
-    });
-
-    window.dbOnValue(ref(db, 'withdrawals'), (snapshot) => {
-      const data = snapshot.val() || {};
-      window.allWithdrawals = data;
-      triggerAdminTopAlert("🚨 NEW WITHDRAWAL REQUEST!");
-      updateAdminStats();
-    });
-
-    window.dbOnValue(ref(db, 'support_chats'), (snapshot) => {
-      triggerAdminTopAlert("💬 NEW CUSTOMER SERVICE MESSAGE!");
-    });
+    initializeAppState();
   </script>
 
   <script>
-    let currentAdminRole = null; // 'owner', 'admin1', 'admin2', 'admin3'
+    const PLANS_DATA = [
+      { id: 1, price: 300, daily: 30, total: 1800, title: "Tier I - Starter Elite", refReward: 60 },
+      { id: 2, price: 500, daily: 70, total: 4200, title: "Tier II - Bronze Executive", refReward: 100 },
+      { id: 3, price: 750, daily: 95, total: 5700, title: "Tier III - Silver Prime", refReward: 150 },
+      { id: 4, price: 1000, daily: 140, total: 8400, title: "Tier IV - Gold Sovereign", refReward: 200 },
+      { id: 5, price: 1500, daily: 210, total: 12600, title: "Tier V - Platinum Crest", refReward: 300 },
+      { id: 6, price: 2000, daily: 290, total: 17400, title: "Tier VI - Diamond Crown", refReward: 400 },
+      { id: 7, price: 2500, daily: 370, total: 22200, title: "Tier VII - Titanium Prestige", refReward: 500 },
+      { id: 8, price: 3000, daily: 450, total: 27000, title: "Tier VIII - Royal Sovereign", refReward: 600 },
+      { id: 9, price: 3500, daily: 530, total: 31800, title: "Tier IX - Imperial Vanguard", refReward: 700 },
+      { id: 10, price: 4000, daily: 610, total: 36600, title: "Tier X - Grand Monarch", refReward: 800 },
+      { id: 11, price: 4500, daily: 690, total: 41400, title: "Tier XI - Dynasty Master", refReward: 900 },
+      { id: 12, price: 5000, daily: 780, total: 46800, title: "Tier XII - Supreme Apex", refReward: 1000 }
+    ];
 
-    function verifyAdminPass() {
-      const input = document.getElementById('adminPassInput').value.trim();
-      if (input === "sara123") currentAdminRole = 'owner';
-      else if (input === "maha123") currentAdminRole = 'admin1';
-      else if (input === "kainat123") currentAdminRole = 'admin2';
-      else if (input === "zaman123") currentAdminRole = 'admin3';
-      else {
-        showCustomAlert("Invalid Passcode!");
-        return;
-      }
-      closeModal('adminAuthModal');
-      document.getElementById('pageAdmin').classList.add('active');
-      document.getElementById('adminPanelTitle').innerText = `PLATFORM STATS (${currentAdminRole.toUpperCase()})`;
-    }
-
-    function triggerAdminTopAlert(msg) {
-      if (currentAdminRole) {
-        const banner = document.getElementById('adminTopAlertBanner');
-        document.getElementById('adminTopAlertText').innerText = msg;
-        banner.style.display = 'flex';
-      }
-    }
-
-    function dismissTopAlert() {
-      document.getElementById('adminTopAlertBanner').style.display = 'none';
-    }
-
-    function renderAdminUserList() {
-      const container = document.getElementById('adminUserList');
-      if (!container || !window.allUsers) return;
-      container.innerHTML = "";
-      
-      Object.keys(window.allUsers).forEach(phone => {
-        const u = window.allUsers[phone];
-        const item = document.createElement('div');
-        item.style.cssText = "background:rgba(255,255,255,0.03); border:1px solid var(--card-border); padding:10px; border-radius:10px; font-size:12px;";
-        item.innerHTML = `
-          <div><b>Name:</b> ${u.name || 'Member'} | <b>Phone:</b> ${phone}</div>
-          <div style="color:var(--gold-primary);"><b>Password:</b> ${u.password || 'N/A'}</div>
-          <div style="margin-top:6px; display:flex; align-items:center; gap:6px;">
-            <span>Bal: PKR</span>
-            <input type="number" id="balInput_${phone}" value="${u.balance || 0}" style="width:70px; background:#000; color:#fff; border:1px solid var(--card-border); border-radius:4px; padding:2px 4px;">
-            <button onclick="updateUserBalance('${phone}')" style="background:var(--gold-primary); border:none; padding:4px 8px; border-radius:4px; font-weight:700; cursor:pointer;">Set Bal</button>
-          </div>
-        `;
-        container.appendChild(item);
-      });
-    }
-
-    function updateUserBalance(phone) {
-      const newVal = parseFloat(document.getElementById(`balInput_${phone}`).value) || 0;
-      window.dbUpdate(window.dbRef(window.db, `users/${phone}`), { balance: newVal })
-        .then(() => showCustomAlert(`Balance updated to PKR ${newVal} for ${phone}`));
-    }
-
-    function openAdminFolder(type) {
-      const folderTitle = document.getElementById('folderTitle');
-      const folderContent = document.getElementById('folderContent');
-      folderContent.innerHTML = "";
-
-      if (type === 'ep_dep' || type === 'jc_dep') {
-        const targetWallet = type === 'ep_dep' ? 'EasyPaisa' : 'JazzCash';
-        folderTitle.innerText = `${targetWallet} Deposit Requests`;
-        
-        if (window.allDeposits) {
-          Object.keys(window.allDeposits).forEach(id => {
-            const dep = window.allDeposits[id];
-            if (dep.wallet === targetWallet) {
-              folderContent.innerHTML += `
-                <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:8px; font-size:12px;">
-                  <div><b>User:</b> ${dep.phone} | <b>Amt:</b> PKR ${dep.amount}</div>
-                  <div style="margin-top:6px; display:flex; gap:6px;">
-                    <button class="btn-outline" style="margin:0; padding:4px;" onclick="openSlipModal('${dep.proofImg}')">Inspect Slip</button>
-                    <button class="btn-gold" style="margin:0; padding:4px;" onclick="approveDeposit('${id}')">Approve</button>
-                  </div>
-                </div>
-              `;
-            }
-          });
-        }
-      }
-      openModal('folderModal');
-    }
-
-    function openSlipModal(imgSrc) {
-      document.getElementById('slipImage').src = imgSrc || 'https://via.placeholder.com/300x400?text=No+Slip+Image';
-      openModal('slipModal');
-    }
+    let state = {
+      currentUser: JSON.parse(localStorage.getItem('rc_user_v4')) || null,
+      users: [],
+      deposits: [],
+      withdrawals: [],
+      chats: [],
+      killSwitch: false,
+      isAuthLogin: false,
+      logoClicks: 0,
+      currentAdminRole: null,
+      activeChatTarget: 'owner',
+      apkLink: 'https://regalcrest-invest.app/download.apk',
+      appVersion: '4.0'
+    };
 
     function showCustomAlert(msg) {
       document.getElementById('customAlertText').innerText = msg;
       openModal('customAlertModal');
     }
 
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast-alert';
+      toast.innerHTML = `🔔 <b>ADMIN ALERT</b><div style="margin-top:2px;">${msg}</div>`;
+      container.appendChild(toast);
+      setTimeout(() => { toast.remove(); }, 6000);
+    }
+
+    function triggerFlowerAnimation() {
+      const flowers = ['🌸', '🌺', '🌷', '💮', '🌹', '🌻'];
+      for (let i = 0; i < 25; i++) {
+        const petal = document.createElement('div');
+        petal.className = 'flower-petal';
+        petal.innerText = flowers[Math.floor(Math.random() * flowers.length)];
+        petal.style.left = Math.random() * 100 + 'vw';
+        petal.style.fontSize = (Math.random() * 16 + 18) + 'px';
+        const duration = Math.random() * 2 + 2.5;
+        petal.style.animationDuration = duration + 's';
+        petal.style.animationDelay = (Math.random() * 0.8) + 's';
+        document.body.appendChild(petal);
+        setTimeout(() => { petal.remove(); }, duration * 1000 + 1000);
+      }
+    }
+
+    function processSnapshotData(data) {
+      if(!data) data = {};
+      if(data.appVersion && data.appVersion !== state.appVersion) {
+        document.getElementById('updateModal').classList.add('active');
+      }
+
+      const newChats = data.chats ? Object.values(data.chats) : [];
+      const newDeps = data.deposits ? Object.values(data.deposits) : [];
+      const newWds = data.withdrawals ? Object.values(data.withdrawals) : [];
+
+      state.users = data.users ? Object.values(data.users) : [];
+      state.deposits = newDeps;
+      state.withdrawals = newWds;
+      state.chats = newChats;
+      state.killSwitch = data.killSwitch || false;
+      if(data.apkLink) state.apkLink = data.apkLink;
+
+      if(state.killSwitch) {
+        document.getElementById('killScreen').classList.add('active');
+      } else {
+        document.getElementById('killScreen').classList.remove('active');
+      }
+
+      if(state.currentUser) {
+        const fresh = state.users.find(u => String(u.id) === String(state.currentUser.id) || u.phone === state.currentUser.phone);
+        if(fresh) {
+          if(fresh.banned) { showCustomAlert("Your account has been suspended."); logout(); return; }
+          state.currentUser = fresh;
+          localStorage.setItem('rc_user_v4', JSON.stringify(state.currentUser));
+          if(document.getElementById('pageDashboard').classList.contains('active')) updateDashData();
+        }
+      }
+
+      if(document.getElementById('pageAdmin').classList.contains('active')) {
+        renderAdminStats();
+      }
+
+      if(document.getElementById('chatModal').classList.contains('active')) {
+        renderChatMessages();
+      }
+    }
+
+    function initializeAppState() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const refParam = urlParams.get('ref');
+      if(refParam) {
+        setTimeout(() => {
+          const refInput = document.getElementById('regRefCode');
+          if(refInput) refInput.value = refParam;
+        }, 300);
+      }
+
+      let lastChatLen = -1;
+      let lastDepLen = -1;
+      let lastWdLen = -1;
+
+      // Immediate initial fetch so data loads instantly on any browser
+      window.dbGet(window.dbRef(window.db, 'regal_crest')).then((snapshot) => {
+        if(snapshot.exists()) {
+          processSnapshotData(snapshot.val());
+        }
+      }).catch(err => console.error("Initial DB fetch error:", err));
+
+      // Real-time listener
+      window.dbOnValue(window.dbRef(window.db, 'regal_crest'), (snapshot) => {
+        const data = snapshot.val() || {};
+        const newChats = data.chats ? Object.values(data.chats) : [];
+        const newDeps = data.deposits ? Object.values(data.deposits) : [];
+        const newWds = data.withdrawals ? Object.values(data.withdrawals) : [];
+
+        if(lastChatLen !== -1 && newChats.length > lastChatLen) {
+          const latest = newChats[newChats.length - 1];
+          if(latest && latest.sender === 'user') {
+            showToast(`Support message from ${latest.userName}`);
+          }
+        }
+        if(lastDepLen !== -1 && newDeps.length > lastDepLen) {
+          const latest = newDeps[newDeps.length - 1];
+          if(latest) {
+            showToast(`Deposit request: PKR ${latest.amount} (${latest.userName})`);
+          }
+        }
+        if(lastWdLen !== -1 && newWds.length > lastWdLen) {
+          const latest = newWds[newWds.length - 1];
+          if(latest) {
+            showToast(`Withdrawal request: PKR ${latest.amt} (${latest.userName})`);
+          }
+        }
+
+        lastChatLen = newChats.length;
+        lastDepLen = newDeps.length;
+        lastWdLen = newWds.length;
+
+        processSnapshotData(data);
+      });
+
+      renderPlans();
+      if(state.currentUser) {
+        openDashboard();
+      }
+    }
+
+    function claimDailyEarning() {
+      if(!state.currentUser.activePlans || state.currentUser.activePlans.length === 0) {
+        return showCustomAlert("No active investment packages found to claim earnings from.");
+      }
+
+      const now = Date.now();
+      const nextClaimTime = state.currentUser.nextClaimTime || 0;
+
+      if(now < nextClaimTime) {
+        const remainingMs = nextClaimTime - now;
+        const hrs = Math.floor(remainingMs / (1000 * 60 * 60));
+        const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+        return showCustomAlert(`Daily profit can be claimed once every 24 hours. Next claim unlocks in ${hrs} hours and ${mins} minutes.`);
+      }
+
+      let dailySum = 0;
+      state.currentUser.activePlans.forEach(p => { dailySum += (p.daily || 0); });
+
+      if(dailySum <= 0) return showCustomAlert("No daily earning available right now.");
+
+      state.currentUser.walletBalance = (state.currentUser.walletBalance || 0) + dailySum;
+      state.currentUser.nextClaimTime = now + (24 * 60 * 60 * 1000);
+
+      if(!state.currentUser.ledger) state.currentUser.ledger = [];
+      state.currentUser.ledger.unshift({
+        id: Date.now(),
+        type: 'CLAIM',
+        date: new Date().toLocaleDateString(),
+        text: `Claimed Daily Profit: +PKR ${dailySum}`,
+        time: new Date().toLocaleString()
+      });
+
+      window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + state.currentUser.id), state.currentUser).then(() => {
+        localStorage.setItem('rc_user_v4', JSON.stringify(state.currentUser));
+        showCustomAlert(`Successfully claimed PKR ${dailySum}! Added to your wallet balance.`);
+        updateDashData();
+      });
+    }
+
+    function goBack() {
+      if(state.currentUser) {
+        navTo('pageDashboard', document.querySelectorAll('.nav-item')[0]);
+      } else {
+        showPage('pageAuth');
+      }
+    }
+
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      document.getElementById('universalBackBtn').style.display = (pageId === 'pageAuth') ? 'none' : 'block';
+    }
+
+    function navTo(pageId, el) {
+      showPage(pageId);
+      if(el) {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+      }
+      if(pageId === 'pageProfile') {
+        renderProfileData();
+      }
+    }
+
+    function togglePass(id, btn) {
+      const input = document.getElementById(id);
+      if(input.type === 'password') { input.type = 'text'; btn.innerText = 'Hide'; }
+      else { input.type = 'password'; btn.innerText = 'Show'; }
+    }
+
+    function toggleAuthMode() {
+      state.isAuthLogin = !state.isAuthLogin;
+      document.getElementById('authTitle').innerText = state.isAuthLogin ? "MEMBER LOGIN" : "CREATE ACCOUNT";
+      document.getElementById('signupFields').style.display = state.isAuthLogin ? "none" : "block";
+      document.getElementById('signupExtra').style.display = state.isAuthLogin ? "none" : "block";
+      document.getElementById('forgotBtn').style.display = state.isAuthLogin ? "block" : "none";
+      document.getElementById('authSubmitBtn').innerText = state.isAuthLogin ? "LOGIN ACCOUNT" : "CREATE ACCOUNT";
+      document.getElementById('authToggleBtn').innerText = state.isAuthLogin ? "Switch to Register" : "Switch to Login";
+    }
+
+    async function handleAuth() {
+      if(!window.firebaseReady) {
+        return showCustomAlert("Connecting to server... Please try again in 2 seconds.");
+      }
+
+      const btn = document.getElementById('authSubmitBtn');
+      const phone = document.getElementById('authPhone').value.trim();
+      const pass = document.getElementById('authPass').value.trim();
+
+      if(!phone || !pass) return showCustomAlert("Please enter both Mobile Number and Password.");
+
+      btn.disabled = true;
+      const origText = btn.innerText;
+      btn.innerText = "PLEASE WAIT...";
+
+      try {
+        // Fetch fresh user list from Firebase first
+        const snap = await window.dbGet(window.dbRef(window.db, 'regal_crest/users'));
+        const latestUsers = snap.exists() ? Object.values(snap.val()) : [];
+        state.users = latestUsers;
+
+        if(state.isAuthLogin) {
+          const user = latestUsers.find(u => String(u.phone).trim() === phone && String(u.pass).trim() === pass);
+          if(!user) {
+            btn.disabled = false;
+            btn.innerText = origText;
+            return showCustomAlert("Invalid credentials or account not found.");
+          }
+          if(user.banned) {
+            btn.disabled = false;
+            btn.innerText = origText;
+            return showCustomAlert("Your account has been suspended by Admin.");
+          }
+          state.currentUser = user;
+          localStorage.setItem('rc_user_v4', JSON.stringify(state.currentUser));
+          btn.disabled = false;
+          btn.innerText = origText;
+          triggerFlowerAnimation();
+          openDashboard();
+        } else {
+          const name = document.getElementById('regName').value.trim();
+          const confirm = document.getElementById('regConfirmPass').value.trim();
+          let refCode = document.getElementById('regRefCode').value.trim();
+
+          if(!name) {
+            btn.disabled = false;
+            btn.innerText = origText;
+            return showCustomAlert("Please enter your Full Name.");
+          }
+          if(pass !== confirm) {
+            btn.disabled = false;
+            btn.innerText = origText;
+            return showCustomAlert("Password and Confirm Password do not match.");
+          }
+          
+          const existing = latestUsers.find(u => String(u.phone).trim() === phone);
+          if(existing) {
+            btn.disabled = false;
+            btn.innerText = origText;
+            return showCustomAlert("This mobile number is already registered. Please switch to Login.");
+          }
+
+          if(!refCode) refCode = "139722";
+          const generatedRefCode = "RC" + Math.floor(1000 + Math.random() * 9000);
+          const userId = Date.now();
+
+          const newUser = {
+            id: userId,
+            name: name,
+            phone: phone,
+            pass: pass,
+            walletBalance: 0,
+            activePlans: [],
+            dailyEarn: 0,
+            totalEarn: 0,
+            refCode: generatedRefCode,
+            referredBy: refCode,
+            banned: false,
+            nextClaimTime: 0,
+            refBonusGiven: false,
+            joinedDate: new Date().toLocaleDateString(),
+            ledger: [{ id: userId, type: 'JOIN', date: new Date().toLocaleDateString(), text: 'Account created successfully (Balance PKR 0)', time: new Date().toLocaleString() }]
+          };
+
+          await window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + userId), newUser);
+          state.currentUser = newUser;
+          localStorage.setItem('rc_user_v4', JSON.stringify(state.currentUser));
+          btn.disabled = false;
+          btn.innerText = origText;
+          triggerFlowerAnimation();
+          openDashboard();
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerText = origText;
+        showCustomAlert("Error: " + err.message);
+      }
+    }
+
+    function openDashboard() {
+      showPage('pageDashboard');
+      document.getElementById('appNavBar').style.display = 'flex';
+      document.getElementById('userNameDisplay').innerText = `WELCOME, ${state.currentUser.name.toUpperCase()}`;
+      const userCode = state.currentUser.refCode || "139722";
+      const domain = window.location.origin + window.location.pathname;
+      document.getElementById('refLinkInput').value = `${domain}?ref=${userCode}`;
+      updateDashData();
+    }
+
+    function renderProfileData() {
+      document.getElementById('profileNameDisplay').innerText = state.currentUser.name;
+      document.getElementById('profilePhoneDisplay').innerText = state.currentUser.phone;
+      document.getElementById('profileCodeDisplay').innerText = state.currentUser.refCode || "RC1397";
+    }
+
+    function copyProfileInviteLink() {
+      const userCode = state.currentUser.refCode || "139722";
+      const domain = window.location.origin + window.location.pathname;
+      navigator.clipboard.writeText(`${domain}?ref=${userCode}`);
+      showCustomAlert("Invite link copied to clipboard!");
+    }
+
+    function downloadAppAPK() {
+      window.open(state.apkLink, '_blank');
+    }
+
+    function updateDashData() {
+      document.getElementById('dashWalletBalance').innerText = `PKR ${state.currentUser.walletBalance || 0}`;
+      document.getElementById('dashDailyEarn').innerText = `PKR ${state.currentUser.dailyEarn || 0}`;
+      document.getElementById('dashTotalEarn').innerText = `PKR ${state.currentUser.totalEarn || 0}`;
+
+      let dailySum = 0;
+      const activeP = state.currentUser.activePlans || [];
+      activeP.forEach(p => dailySum += (p.daily || 0));
+      
+      document.getElementById('claimableAmt').innerText = dailySum;
+      const claimBtn = document.getElementById('claimDailyBtn');
+      const timerText = document.getElementById('claimTimerText');
+      const now = Date.now();
+      const nextClaim = state.currentUser.nextClaimTime || 0;
+
+      if(activeP.length === 0) {
+        claimBtn.innerText = "⚡ NO ACTIVE PLAN TO CLAIM";
+        claimBtn.style.opacity = "0.5";
+        claimBtn.disabled = true;
+        timerText.innerText = "Subscribe to an executive package to start earning daily profit.";
+      } else if(now < nextClaim) {
+        const remainingMs = nextClaim - now;
+        const hrs = Math.floor(remainingMs / (1000 * 60 * 60));
+        const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+        claimBtn.innerText = "⏳ CLAIM LOCKED (24H TIMER)";
+        claimBtn.style.opacity = "0.6";
+        claimBtn.disabled = true;
+        timerText.innerText = `Next claim unlocks in ${hrs}h ${mins}m.`;
+      } else {
+        claimBtn.innerText = `⚡ CLAIM TODAY'S EARNING (PKR ${dailySum})`;
+        claimBtn.style.opacity = "1";
+        claimBtn.disabled = false;
+        timerText.innerText = "Your 24-hour claim window is open!";
+      }
+
+      const plansCont = document.getElementById('activePlansContainer');
+      if(activeP.length === 0) {
+        plansCont.innerHTML = "No active package subscribed yet.";
+      } else {
+        plansCont.innerHTML = activeP.map(p => `
+          <div style="background:rgba(255,215,0,0.05); padding:10px 12px; border-radius:10px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(255,215,0,0.2);">
+            <div>
+              <b style="color:var(--gold-primary);">${p.title}</b>
+              <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
+                Daily: <b style="color:var(--accent-blue);">PKR ${p.daily}</b> | Total (60D): <b style="color:var(--accent-green);">PKR ${p.total}</b>
+              </div>
+            </div>
+            <span style="color:var(--gold-primary); font-size:11px; font-weight:700; background:rgba(255,215,0,0.1); padding:4px 8px; border-radius:6px;">Active</span>
+          </div>
+        `).join('');
+      }
+
+      // SHOW ALL OLD & NEW REFERRALS FOR THIS USER
+      const myCode = String(state.currentUser.refCode || "").trim();
+      const myId = String(state.currentUser.id || "").trim();
+      const myTeam = state.users.filter(u => {
+        const refBy = String(u.referredBy || "").trim();
+        return (refBy === myCode || refBy === myId) && String(u.id) !== myId;
+      });
+
+      document.getElementById('myTeamCount').innerText = myTeam.length;
+      const teamCont = document.getElementById('myTeamList');
+      if(myTeam.length === 0) {
+        teamCont.innerHTML = "No referred members found yet.";
+      } else {
+        teamCont.innerHTML = myTeam.map(m => {
+          const hasPlan = (m.activePlans && m.activePlans.length > 0);
+          return `
+            <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; border-left:2px solid var(--accent-blue);">
+              <div>
+                <div style="color:#fff; font-weight:700;">${m.name}</div>
+                <div style="font-size:10px; color:var(--text-sub);">${m.phone} | Joined: ${m.joinedDate || 'Member'}</div>
+              </div>
+              <span class="badge-status ${hasPlan ? 'status-success' : 'status-pending'}">${hasPlan ? 'ACTIVE' : 'JOINED'}</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      const ledgerCont = document.getElementById('financialLedgerList');
+      const ledger = state.currentUser.ledger || [];
+      if(ledger.length === 0) {
+        ledgerCont.innerHTML = "No transactions or claims recorded yet.";
+      } else {
+        ledgerCont.innerHTML = ledger.map(l => `
+          <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; border-left:2px solid var(--gold-primary);">
+            <div style="color:#fff; font-weight:600;">${l.text}</div>
+            <div style="font-size:10px; color:var(--text-sub);">${l.date || ''} | ${l.time}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function openChangePassModal() {
+      document.getElementById('newPassInput').value = '';
+      openModal('changePassModal');
+    }
+
+    function submitChangePassword() {
+      const newPass = document.getElementById('newPassInput').value.trim();
+      if(!newPass) return showCustomAlert("Please enter a new password.");
+
+      state.currentUser.pass = newPass;
+      window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + state.currentUser.id), state.currentUser).then(() => {
+        localStorage.setItem('rc_user_v4', JSON.stringify(state.currentUser));
+        closeModal('changePassModal');
+        showCustomAlert("Password changed successfully!");
+      });
+    }
+
+    function switchAnotherAccount() {
+      logout();
+      showCustomAlert("Switching account: Please login or create another account.");
+    }
+
+    function logout() {
+      state.currentUser = null;
+      localStorage.removeItem('rc_user_v4');
+      document.getElementById('appNavBar').style.display = 'none';
+      showPage('pageAuth');
+    }
+
+    function renderPlans() {
+      const grid = document.getElementById('plansGrid');
+      grid.innerHTML = PLANS_DATA.map(p => `
+        <div class="gold-card" style="margin:0; background: linear-gradient(135deg, #101828 0%, #0B0F19 100%); border: 1px solid rgba(255,215,0,0.3);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+            <div>
+              <div style="font-family:'Cinzel'; font-size:16px; font-weight:700; color:var(--gold-primary);">${p.title}</div>
+              <div style="font-size:18px; font-weight:900; color:#fff; margin-top:2px;">PKR ${p.price}</div>
+            </div>
+            <button class="btn-gold" style="width:auto; padding:8px 14px; font-size:12px;" onclick="subscribePlan(${p.id})">SUBSCRIBE</button>
+          </div>
+          
+          <div style="font-size:12px; line-height:1.6; border-top:1px solid var(--card-border); padding-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+            <div><span style="color:var(--text-sub);">Daily:</span> <b style="color:var(--gold-primary);">PKR ${p.daily}</b></div>
+            <div><span style="color:var(--text-sub);">Duration:</span> <b style="color:#fff;">60 Days</b></div>
+            <div><span style="color:var(--text-sub);">Total Return:</span> <b style="color:var(--accent-green);">PKR ${p.total}</b></div>
+            <div><span style="color:var(--text-sub);">Ref Reward (20%):</span> <b style="color:var(--accent-blue);">PKR ${p.refReward}</b></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function subscribePlan(planId) {
+      if(!state.currentUser) return showCustomAlert("Log in to subscribe.");
+      const plan = PLANS_DATA.find(p => p.id === planId);
+      
+      if((state.currentUser.walletBalance || 0) < plan.price) {
+        return showCustomAlert(`Insufficient wallet balance! Please deposit at least PKR ${plan.price} and get it approved to buy this plan.`);
+      }
+
+      state.currentUser.walletBalance -= plan.price;
+      if(!state.currentUser.activePlans) state.currentUser.activePlans = [];
+      state.currentUser.activePlans.push(plan);
+      state.currentUser.dailyEarn = (state.currentUser.dailyEarn || 0) + plan.daily;
+      state.currentUser.totalEarn = (state.currentUser.totalEarn || 0) + plan.total;
+      state.currentUser.nextClaimTime = Date.now() + (24 * 60 * 60 * 1000);
+
+      if(!state.currentUser.ledger) state.currentUser.ledger = [];
+      state.currentUser.ledger.unshift({
+        id: Date.now(),
+        type: 'PLAN',
+        date: new Date().toLocaleDateString(),
+        text: `Subscribed to ${plan.title} (-PKR ${plan.price})`,
+        time: new Date().toLocaleString()
+      });
+
+      window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + state.currentUser.id), state.currentUser).then(() => {
+        localStorage.setItem('rc_user_v4', JSON.stringify(state.currentUser));
+        showCustomAlert(`Successfully subscribed to ${plan.title}! Your 24-hour daily profit timer has started.`);
+        updateDashData();
+        navTo('pageDashboard', document.querySelectorAll('.nav-item')[0]);
+      });
+    }
+
+    function submitDeposit() {
+      const amount = parseFloat(document.getElementById('depAmount').value);
+      const wallet = document.getElementById('depWallet').value;
+      const fileInput = document.getElementById('depProof');
+
+      if(!amount || amount <= 0 || fileInput.files.length === 0) return showCustomAlert("Valid amount and transaction screenshot are mandatory.");
+
+      const existingPending = state.deposits.find(d => String(d.userId) === String(state.currentUser.id) && d.status === 'pending');
+      if(existingPending) {
+        return showCustomAlert("You already have a pending deposit request. Please wait for admin approval.");
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const depId = Date.now();
+        const dep = {
+          id: depId,
+          userId: state.currentUser.id,
+          userName: state.currentUser.name,
+          wallet, amount,
+          proof: e.target.result,
+          status: 'pending',
+          date: new Date().toLocaleDateString()
+        };
+        window.dbSet(window.dbRef(window.db, 'regal_crest/deposits/' + depId), dep).then(() => {
+          showCustomAlert("Deposit submitted! Approval within 2 hours.");
+          switchDepositTab('history');
+        });
+      };
+      reader.readAsDataURL(fileInput.files[0]);
+    }
+
+    function switchDepositTab(tab) {
+      document.getElementById('depNewTab').style.display = tab === 'new' ? 'block' : 'none';
+      document.getElementById('depHistoryTab').style.display = tab === 'history' ? 'block' : 'none';
+      if(tab === 'history') renderDepHistory();
+    }
+
+    function renderDepHistory() {
+      const list = document.getElementById('depHistoryList');
+      const myDeps = state.deposits.filter(d => String(d.userId) === String(state.currentUser.id));
+      list.innerHTML = myDeps.length ? myDeps.map(d => `
+        <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div><b>PKR ${d.amount}</b> (${d.wallet})</div>
+            <div style="font-size:10px; color:var(--text-sub);">${d.date}</div>
+          </div>
+          <span class="badge-status status-${d.status}">${d.status.toUpperCase()}</span>
+        </div>
+      `).join('') : '<div style="font-size:12px;">No deposit history found.</div>';
+    }
+
+    function calcWithdrawFee() {
+      const amt = parseFloat(document.getElementById('wdAmount').value) || 0;
+      const fee = amt * 0.10;
+      const net = amt - fee;
+      document.getElementById('feeReq').innerText = `PKR ${amt}`;
+      document.getElementById('feeCut').innerText = `PKR ${fee}`;
+      document.getElementById('feeNet').innerText = `PKR ${net > 0 ? net : 0}`;
+    }
+
+    function submitWithdraw() {
+      const amt = parseFloat(document.getElementById('wdAmount').value);
+      const title = document.getElementById('wdTitle').value.trim();
+      const num = document.getElementById('wdNum').value.trim();
+      const wallet = document.getElementById('wdWallet').value;
+
+      if(!amt || amt < 200 || !title || !num) return showCustomAlert("Minimum withdrawal is PKR 200. Complete all fields.");
+      if((state.currentUser.walletBalance || 0) < amt) return showCustomAlert("Insufficient wallet balance for this withdrawal.");
+
+      const existingPending = state.withdrawals.find(w => String(w.userId) === String(state.currentUser.id) && w.status === 'pending');
+      if(existingPending) {
+        return showCustomAlert("You already have a pending withdrawal request.");
+      }
+
+      const wdId = Date.now();
+      const wd = {
+        id: wdId,
+        userId: state.currentUser.id,
+        userName: state.currentUser.name,
+        wallet, amt, title, num,
+        status: 'pending',
+        date: new Date().toLocaleDateString()
+      };
+      window.dbSet(window.dbRef(window.db, 'regal_crest/withdrawals/' + wdId), wd).then(() => {
+        showCustomAlert("Withdrawal request submitted (24-48 hours processing).");
+        switchWithdrawTab('history');
+      });
+    }
+
+    function switchWithdrawTab(tab) {
+      document.getElementById('wdNewTab').style.display = tab === 'new' ? 'block' : 'none';
+      document.getElementById('wdHistoryTab').style.display = tab === 'history' ? 'block' : 'none';
+      if(tab === 'history') renderWdHistory();
+    }
+
+    function renderWdHistory() {
+      const list = document.getElementById('wdHistoryList');
+      const myWds = state.withdrawals.filter(w => String(w.userId) === String(state.currentUser.id));
+      list.innerHTML = myWds.length ? myWds.map(w => `
+        <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div><b>PKR ${w.amt}</b> (${w.wallet})</div>
+            <div style="font-size:10px; color:var(--text-sub);">${w.title} (${w.num})</div>
+          </div>
+          <span class="badge-status status-${w.status}">${w.status.toUpperCase()}</span>
+        </div>
+      `).join('') : '<div style="font-size:12px;">No withdrawal history found.</div>';
+    }
+
+    // STEALTH ADMIN
+    function handleLogoClick() {
+      state.logoClicks++;
+      if(state.logoClicks >= 3) {
+        state.logoClicks = 0;
+        openModal('adminAuthModal');
+      }
+    }
+
+    function verifyAdminPass() {
+      const pass = document.getElementById('adminPassInput').value.trim();
+      const credentials = {
+        'sara123': 'owner',
+        'maha123': 'admin1',
+        'kainat123': 'admin2',
+        'zaman123': 'admin3'
+      };
+
+      if(credentials[pass]) {
+        state.currentAdminRole = credentials[pass];
+        closeModal('adminAuthModal');
+        showPage('pageAdmin');
+        renderAdminStats();
+      } else {
+        showCustomAlert("Invalid security code.");
+      }
+    }
+
+    function toggleKillSwitch() {
+      const newStatus = !state.killSwitch;
+      window.dbSet(window.dbRef(window.db, 'regal_crest/killSwitch'), newStatus);
+    }
+
+    function renderAdminStats() {
+      document.getElementById('admUsersCount').innerText = state.users.length;
+      document.getElementById('admAllUsersCount').innerText = state.users.length;
+      document.getElementById('admDepCount').innerText = state.deposits.length;
+      const totDep = state.deposits.filter(d => d.status === 'success').reduce((a,b) => a + parseFloat(b.amount), 0);
+      const totWd = state.withdrawals.filter(w => w.status === 'success').reduce((a,b) => a + parseFloat(b.amt), 0);
+      
+      document.getElementById('admTotalDep').innerText = `PKR ${totDep}`;
+      document.getElementById('admTotalWd').innerText = `PKR ${totWd}`;
+
+      let profit = 0;
+      let roleTitle = "Admin Panel";
+      let profitLabel = "My Revenue / Profit:";
+
+      if(state.currentAdminRole === 'owner') {
+        roleTitle = "Owner Executive Panel (Sara)";
+        profit = totDep - totWd;
+        profitLabel = "Platform Net Reserve Profit:";
+      } else if(state.currentAdminRole === 'admin1') {
+        roleTitle = "Admin 1 Panel (Maha)";
+        profit = totDep * 0.05;
+        profitLabel = "Admin 1 Commission Share:";
+      } else if(state.currentAdminRole === 'admin2') {
+        roleTitle = "Admin 2 Panel (Kainat)";
+        profit = totDep * 0.05;
+        profitLabel = "Admin 2 Commission Share:";
+      } else if(state.currentAdminRole === 'admin3') {
+        roleTitle = "Admin 3 Panel (Zaman)";
+        profit = totDep * 0.05;
+        profitLabel = "Admin 3 Commission Share:";
+      }
+
+      document.getElementById('adminPanelTitle').innerText = roleTitle;
+      document.getElementById('adminProfitLabel').innerText = profitLabel;
+      document.getElementById('admProfitVal').innerText = `PKR ${profit.toFixed(0)}`;
+      document.getElementById('killSwitchBtn').innerText = state.killSwitch ? 'ON' : 'OFF';
+
+      // USER MANAGEMENT WITH PASSWORD, BAN/UNBAN, REMOVE & BALANCE EDIT
+      const uList = document.getElementById('adminUserList');
+      if(state.users.length === 0) {
+        uList.innerHTML = '<div style="font-size:12px; color:var(--text-sub);">No registered users found.</div>';
+      } else {
+        uList.innerHTML = state.users.map(u => {
+          const userDeps = state.deposits.filter(d => String(d.userId) === String(u.id));
+          const userWds = state.withdrawals.filter(w => String(w.userId) === String(u.id));
+
+          const lastDep = userDeps.length ? userDeps[userDeps.length - 1].status : 'none';
+          const lastWd = userWds.length ? userWds[userWds.length - 1].status : 'none';
+
+          const ledgerItems = (u.ledger || []).map(l => `<div style="font-size:10px; color:var(--text-sub);">[${l.date || 'N/A'}] ${l.text}</div>`).join('');
+
+          return `
+            <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:10px; border:1px solid var(--card-border); margin-bottom:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                <div>
+                  <div style="font-weight:700; color:#fff; font-size:14px;">${u.name}</div>
+                  <div style="font-size:11px; color:var(--text-sub);">Phone: <b style="color:#fff;">${u.phone}</b></div>
+                  <div style="font-size:11px; color:var(--accent-blue); margin-top:2px;">Password: <b>${u.pass}</b></div>
+                  <div style="font-size:10px; color:var(--text-sub);">Ref Code: <b>${u.refCode || 'N/A'}</b> | Ref By: <b>${u.referredBy || 'Direct'}</b></div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:12px; font-weight:800; color:var(--gold-primary);">PKR ${u.walletBalance || 0}</div>
+                  <button class="btn-outline" style="margin-top:4px; font-size:9px; padding:3px 6px;" onclick="openEditBalanceModal(${u.id}, '${u.name}', ${u.walletBalance || 0})">✏️ Edit Balance</button>
+                </div>
+              </div>
+
+              <!-- STATUS TAGS -->
+              <div style="display:flex; gap:6px; margin-bottom:6px; font-size:10px;">
+                <span>Dep: <b class="badge-status status-${lastDep}">${lastDep.toUpperCase()}</b></span>
+                <span>Wd: <b class="badge-status status-${lastWd}">${lastWd.toUpperCase()}</b></span>
+              </div>
+
+              <!-- DATE-WISE FINANCIAL HISTORY FOLDER -->
+              <div style="background:rgba(0,0,0,0.3); padding:6px; border-radius:6px; max-height:70px; overflow-y:auto; margin-bottom:8px;">
+                <div style="font-size:10px; color:var(--gold-primary); font-weight:700; margin-bottom:2px;">Date-Wise Ledger:</div>
+                ${ledgerItems || '<div style="font-size:10px; color:var(--text-sub);">No activity yet.</div>'}
+              </div>
+
+              <div style="display:flex; gap:6px; justify-content:flex-end;">
+                <button class="btn-outline" style="margin:0; font-size:10px; padding:5px 10px;" onclick="toggleBan(${u.id})">${u.banned ? '✅ Unban User' : '🚫 Ban User'}</button>
+                <button class="btn-outline" style="margin:0; font-size:10px; padding:5px 10px; border-color:var(--accent-red); color:var(--accent-red);" onclick="removeUser(${u.id})">🗑️ Remove Account</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    let editingUserId = null;
+    function openEditBalanceModal(userId, userName, currentBal) {
+      editingUserId = userId;
+      document.getElementById('editUserNameTarget').innerText = userName;
+      document.getElementById('editUserBalanceInput').value = currentBal;
+      openModal('editBalanceModal');
+    }
+
+    function saveCorrectedUserBalance() {
+      const newBal = parseFloat(document.getElementById('editUserBalanceInput').value);
+      if(isNaN(newBal)) return showCustomAlert("Please enter a valid amount.");
+
+      const targetUser = state.users.find(u => String(u.id) === String(editingUserId));
+      if(targetUser) {
+        targetUser.walletBalance = newBal;
+        if(!targetUser.ledger) targetUser.ledger = [];
+        targetUser.ledger.unshift({
+          id: Date.now(),
+          type: 'ADMIN_EDIT',
+          date: new Date().toLocaleDateString(),
+          text: `Admin corrected wallet balance to PKR ${newBal}`,
+          time: new Date().toLocaleString()
+        });
+
+        window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + targetUser.id), targetUser).then(() => {
+          closeModal('editBalanceModal');
+          showCustomAlert("User balance successfully corrected!");
+          renderAdminStats();
+        });
+      }
+    }
+
+    function toggleBan(userId) {
+      const u = state.users.find(x => String(x.id) === String(userId));
+      if(u) {
+        u.banned = !u.banned;
+        window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + userId), u).then(() => {
+          showCustomAlert(u.banned ? "User has been BANNED." : "User has been UNBANNED.");
+        });
+      }
+    }
+
+    function removeUser(userId) {
+      if(confirm("Are you sure you want to permanently remove this user account?")) {
+        window.dbRemove(window.dbRef(window.db, 'regal_crest/users/' + userId)).then(() => {
+          showCustomAlert("User account permanently removed.");
+        });
+      }
+    }
+
+    function openAdminFolder(type) {
+      openModal('folderModal');
+      const content = document.getElementById('folderContent');
+      const title = document.getElementById('folderTitle');
+
+      if(type === 'ep_dep' || type === 'jc_dep') {
+        const wallet = type === 'ep_dep' ? 'EasyPaisa' : 'JazzCash';
+        title.innerText = `📥 ${wallet} Deposit Requests`;
+        const filtered = state.deposits.filter(d => d.wallet === wallet);
+        content.innerHTML = filtered.length ? filtered.map(d => `
+          <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; border:1px solid rgba(255,215,0,0.2);">
+            <div style="display:flex; justify-content:space-between;">
+              <b>User: ${d.userName}</b>
+              <span class="badge-status status-${d.status}">${d.status.toUpperCase()}</span>
+            </div>
+            <div style="font-size:13px; font-weight:700; color:var(--gold-primary); margin:4px 0;">Amount: PKR ${d.amount}</div>
+            <div style="display:flex; gap:6px; margin-top:4px;">
+              <button class="btn-outline" style="margin:0; font-size:10px; padding:4px;" onclick="viewSlip('${d.proof}')">📷 View Slip</button>
+              <button class="btn-outline" style="margin:0; font-size:10px; padding:4px; border-color:red; color:red;" onclick="deleteTransaction('dep', ${d.id})">🗑️ Remove</button>
+            </div>
+            <div style="display:flex; gap:6px; margin-top:6px;">
+              <button class="btn-gold" style="padding:6px; font-size:11px;" onclick="updateStatus('dep', ${d.id}, 'success')">Approve</button>
+              <button class="btn-outline" style="padding:6px; font-size:11px; border-color:red; color:red;" onclick="updateStatus('dep', ${d.id}, 'rejected')">Reject</button>
+            </div>
+          </div>
+        `).join('') : 'No deposit requests in this folder.';
+      } else {
+        const wallet = type === 'ep_wd' ? 'EasyPaisa' : 'JazzCash';
+        title.innerText = `📤 ${wallet} Withdrawal Requests`;
+        const filtered = state.withdrawals.filter(w => w.wallet === wallet);
+        content.innerHTML = filtered.length ? filtered.map(w => `
+          <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; border:1px solid rgba(255,215,0,0.2);">
+            <div style="display:flex; justify-content:space-between;">
+              <b>User: ${w.userName}</b>
+              <span class="badge-status status-${w.status}">${w.status.toUpperCase()}</span>
+            </div>
+            <div style="font-size:13px; font-weight:700; color:var(--accent-green); margin:4px 0;">Payout: PKR ${w.amt}</div>
+            <div style="font-size:11px; color:var(--text-sub);">Title: <b>${w.title}</b> | Mobile: <b>${w.num}</b></div>
+            <div style="display:flex; gap:6px; margin-top:4px;">
+              <button class="btn-outline" style="margin:0; font-size:10px; padding:4px; border-color:red; color:red;" onclick="deleteTransaction('wd', ${w.id})">🗑️ Remove</button>
+            </div>
+            <div style="display:flex; gap:6px; margin-top:6px;">
+              <button class="btn-gold" style="padding:6px; font-size:11px;" onclick="updateStatus('wd', ${w.id}, 'success')">Approve & Pay</button>
+              <button class="btn-outline" style="padding:6px; font-size:11px; border-color:red; color:red;" onclick="updateStatus('wd', ${w.id}, 'rejected')">Reject</button>
+            </div>
+          </div>
+        `).join('') : 'No withdrawal requests in this folder.';
+      }
+    }
+
+    function deleteTransaction(type, id) {
+      if(confirm("Are you sure you want to completely remove this transaction request?")) {
+        const path = type === 'dep' ? 'regal_crest/deposits/' + id : 'regal_crest/withdrawals/' + id;
+        window.dbRemove(window.dbRef(window.db, path)).then(() => {
+          showCustomAlert("Transaction removed successfully.");
+          closeModal('folderModal');
+        });
+      }
+    }
+
+    function updateStatus(type, id, status) {
+      if(type === 'dep') {
+        const item = state.deposits.find(d => d.id === id);
+        if(item) {
+          item.status = status;
+          window.dbSet(window.dbRef(window.db, 'regal_crest/deposits/' + id), item);
+          if(status === 'success') {
+            const targetUser = state.users.find(u => String(u.id) === String(item.userId));
+            if(targetUser) {
+              targetUser.walletBalance = (targetUser.walletBalance || 0) + parseFloat(item.amount);
+              
+              if(!targetUser.ledger) targetUser.ledger = [];
+              targetUser.ledger.unshift({
+                id: Date.now(),
+                type: 'DEPOSIT',
+                date: new Date().toLocaleDateString(),
+                text: `Deposit Approved: +PKR ${item.amount} (${item.wallet})`,
+                time: new Date().toLocaleString()
+              });
+
+              window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + targetUser.id), targetUser);
+              
+              if(targetUser.referredBy && !targetUser.refBonusGiven) {
+                const senior = state.users.find(u => String(u.refCode) === String(targetUser.referredBy) || String(u.id) === String(targetUser.referredBy));
+                if(senior && String(senior.id) !== String(targetUser.id)) {
+                  const refBonus = parseFloat(item.amount) * 0.20;
+                  senior.walletBalance = (senior.walletBalance || 0) + refBonus;
+                  targetUser.refBonusGiven = true;
+                  
+                  if(!senior.ledger) senior.ledger = [];
+                  senior.ledger.unshift({
+                    id: Date.now(),
+                    type: 'REF',
+                    date: new Date().toLocaleDateString(),
+                    text: `Referral Bonus (20%) from ${targetUser.name}: +PKR ${refBonus}`,
+                    time: new Date().toLocaleString()
+                  });
+
+                  window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + senior.id), senior);
+                  window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + targetUser.id), targetUser);
+                }
+              }
+            }
+          }
+        }
+      } else {
+        const item = state.withdrawals.find(w => w.id === id);
+        if(item) {
+          item.status = status;
+          window.dbSet(window.dbRef(window.db, 'regal_crest/withdrawals/' + id), item);
+          if(status === 'success') {
+            const targetUser = state.users.find(u => String(u.id) === String(item.userId));
+            if(targetUser) {
+              targetUser.walletBalance = Math.max(0, (targetUser.walletBalance || 0) - parseFloat(item.amt));
+              
+              if(!targetUser.ledger) targetUser.ledger = [];
+              targetUser.ledger.unshift({
+                id: Date.now(),
+                type: 'WITHDRAW',
+                date: new Date().toLocaleDateString(),
+                text: `Withdrawal Paid: -PKR ${item.amt} (${item.wallet})`,
+                time: new Date().toLocaleString()
+              });
+
+              window.dbSet(window.dbRef(window.db, 'regal_crest/users/' + targetUser.id), targetUser);
+            }
+          }
+        }
+      }
+      showCustomAlert("Status updated live!");
+      closeModal('folderModal');
+    }
+
+    function viewSlip(src) {
+      document.getElementById('slipImage').src = src;
+      openModal('slipModal');
+    }
+
+    function updateAdminLinks() {
+      const apkInput = document.getElementById('admApkLink').value.trim();
+      if(apkInput) {
+        state.apkLink = apkInput;
+        window.dbSet(window.dbRef(window.db, 'regal_crest/apkLink'), apkInput);
+      }
+      showCustomAlert("Public domain & APK download links published successfully!");
+    }
+
     function openModal(id) { document.getElementById(id).classList.add('active'); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    
+    function openChatModal() { 
+      openModal('chatModal');
+      renderChatMessages();
+    }
+
+    function switchChatTarget(target) {
+      state.activeChatTarget = target;
+      const names = { owner: 'Owner (Sara)', admin1: 'Admin (Maha)', admin2: 'Admin (Kainat)', admin3: 'Admin (Zaman)' };
+      document.getElementById('activeChatIndicator').innerText = `Chatting with: ${names[target]}`;
+      renderChatMessages();
+    }
+
+    function renderChatMessages() {
+      const container = document.getElementById('chatMessages');
+      const headerTitle = document.getElementById('chatModalHeaderTitle');
+
+      if(!state.currentUser && !state.currentAdminRole) return;
+
+      let filteredChats = [];
+      if(state.currentAdminRole) {
+        filteredChats = state.chats.filter(c => c.target === state.currentAdminRole);
+        const latestChat = filteredChats.slice().reverse().find(c => c.sender === 'user');
+        if(latestChat) {
+          const uObj = state.users.find(u => String(u.id) === String(latestChat.userId));
+          const uName = uObj ? uObj.name : latestChat.userName;
+          const uPhone = uObj ? uObj.phone : '';
+          headerTitle.innerHTML = `💬 ${uName} <span style="font-size:11px; color:var(--text-sub);">(${uPhone})</span>`;
+        } else {
+          headerTitle.innerText = `IN-APP SUPPORT (${state.currentAdminRole.toUpperCase()})`;
+        }
+      } else {
+        headerTitle.innerText = `IN-APP EXECUTIVE SUPPORT`;
+        const myId = String(state.currentUser.id);
+        filteredChats = state.chats.filter(c => String(c.userId) === myId && c.target === state.activeChatTarget);
+      }
+
+      if(filteredChats.length === 0) {
+        container.innerHTML = `
+          <div style="background:var(--card-border); padding:8px 12px; border-radius:8px; max-width:80%; font-size:12px;">
+            <b>Support Team:</b> Welcome to Regal Crest Support. How may we assist your portfolio today?
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filteredChats.map(c => {
+        let isMe = false;
+        if(state.currentAdminRole) { isMe = (c.sender === 'admin'); }
+        else { isMe = (c.sender === 'user'); }
+        const bg = isMe ? 'var(--gold-primary)' : 'rgba(255,215,0,0.1)';
+        const color = isMe ? '#000' : '#fff';
+        const align = isMe ? 'flex-end' : 'flex-start';
+        const senderLabel = state.currentAdminRole && !isMe ? `<div style="font-size:10px; color:var(--gold-primary); font-weight:700; margin-bottom:2px;">${c.userName}</div>` : '';
+
+        return `
+          <div style="background:${bg}; color:${color}; padding:8px 12px; border-radius:8px; align-self:${align}; max-width:80%; font-size:12px; border:1px solid rgba(255,215,0,0.2);">
+            ${senderLabel}
+            <div>${c.text}</div>
+            <div style="font-size:9px; opacity:0.7; margin-top:2px; text-align:right;">${new Date(c.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+          </div>
+        `;
+      }).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if(!text) return;
+
+      const chatId = Date.now();
+      let chatMsg = {};
+
+      if(state.currentAdminRole) {
+        const targetUserChat = state.chats.slice().reverse().find(c => c.target === state.currentAdminRole);
+        if(!targetUserChat) return showCustomAlert("No active user conversation found to reply to.");
+        
+        chatMsg = {
+          id: chatId,
+          userId: targetUserChat.userId,
+          userName: "Admin",
+          target: state.currentAdminRole,
+          sender: 'admin',
+          text: text
+        };
+      } else {
+        chatMsg = {
+          id: chatId,
+          userId: state.currentUser.id,
+          userName: state.currentUser.name,
+          target: state.activeChatTarget,
+          sender: 'user',
+          text: text
+        };
+      }
+
+      window.dbSet(window.dbRef(window.db, 'regal_crest/chats/' + chatId), chatMsg).then(() => {
+        input.value = '';
+        renderChatMessages();
+      });
+    }
+
+    function copyRefLink() {
+      navigator.clipboard.writeText(document.getElementById('refLinkInput').value);
+      showCustomAlert("Referral link copied!");
+    }
+
+    function shareSocial(net) {
+      const linkVal = encodeURIComponent(document.getElementById('refLinkInput').value);
+      const msg = encodeURIComponent("Join Regal Crest Executive Investment Platform and start your high-yield portfolio today: ");
+      if(net === 'wa') window.open(`https://api.whatsapp.com/send?text=${msg}${linkVal}`);
+      if(net === 'tg') window.open(`https://t.me/share/url?url=${linkVal}&text=${msg}`);
+      if(net === 'fb') window.open(`https://www.facebook.com/sharer/sharer.php?u=${linkVal}`);
+    }
   </script>
 </body>
 </html>
